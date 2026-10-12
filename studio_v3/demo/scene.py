@@ -28,11 +28,11 @@ def arr(a,b,color):return m.Arrow([*a,0],[*b,0],buff=0,color=color,stroke_width=
 
 class ColumnaDoubleCurvature(m.Scene):
     def wait_until(self,x):
-        if x>self.clock:self.wait(x-self.clock);self.clock=x
+        if x>self.chapter_elapsed:self.wait(x-self.chapter_elapsed);self.chapter_elapsed=x
     def show(self,*events,secs=1):
-        self.play(*events,run_time=secs);self.clock+=secs
+        self.play(*events,run_time=secs);self.chapter_elapsed+=secs
     def begin(self,idx):
-        self.clock=0.;b=BEATS[idx]
+        self.chapter_elapsed=0.;b=BEATS[idx]
         header=label(b['head'],0,3.21,S.heading_text)
         sub=label(b['sub'],0,-3.25,S.label_text)
         if idx==0:
@@ -40,7 +40,7 @@ class ColumnaDoubleCurvature(m.Scene):
             self.show(m.FadeIn(header),m.FadeIn(sub),secs=.60)
         else:self.show(m.Transform(self.header,header),m.Transform(self.subtitle,sub),secs=.60)
     def finish(self):
-        if self.clock>SECONDS_PER_BEAT+.01:raise ValueError('chapter overrun')
+        if self.chapter_elapsed>SECONDS_PER_BEAT+.01:raise ValueError('chapter overrun')
         self.wait_until(SECONDS_PER_BEAT)
     def construct(self):
         self.camera.background_color=S.background
@@ -98,7 +98,7 @@ class ColumnaDoubleCurvature(m.Scene):
 
         self.begin(3)
         self.show(m.FadeOut(tangent_bottom),m.FadeOut(tangent_top),m.FadeOut(explain),m.FadeOut(note),secs=.65)
-        panelheading=label('MOMENTO  /  COLUMNA IZQUIERDA',3.50,2.28,25,S.ink)
+        panelheading=label('MOMENTO LOCAL · C1',3.62,2.26,24,S.ink)
         self.show(m.Transform(header2,panelheading) if header2 in self.mobjects else m.FadeIn(panelheading),secs=.6)
         self.wait_until(2.0)
         plot=diagram_panel(col_left,'M',x=2.65,y=-1.52,length=3.10,amplitude=.85)
@@ -109,12 +109,12 @@ class ColumnaDoubleCurvature(m.Scene):
         high=label('Mtop = +17,05 kN·m',3.39,-2.48,25,S.moment_positive)
         self.show(m.FadeIn(high),secs=.65)
         self.wait_until(10.4)
-        zero=label('Inflexión: z ≈ 1,98 m',3.48,.07,25,S.inflection)
+        zero=label('z0 = 1,98 m',4.50,-.13,24,S.inflection)
         self.show(m.FadeIn(zero),secs=.6)
         self.finish()
 
         self.begin(4)
-        self.show(m.FadeOut(plot),m.FadeOut(low),m.FadeOut(high),m.FadeOut(zero),secs=.65)
+        self.show(m.FadeOut(plot),m.FadeOut(low),m.FadeOut(high),m.FadeOut(zero),m.FadeOut(panelheading),secs=.65)
         self.wait_until(2.15)
         shearplot=diagram_panel(col_left,'V',x=2.63,y=-1.50,length=3.08,amplitude=.64)
         self.show(m.FadeIn(shearplot),secs=1.8)
@@ -127,13 +127,13 @@ class ColumnaDoubleCurvature(m.Scene):
         self.show(m.FadeIn(msg),secs=.75)
         self.wait_until(10.5)
         sumv=label('11,99 + 12,01 = 24 kN',3.48,.10,26,S.ink)
-        self.show(m.FadeIn(sumv),secs=.6)
+        self.show(m.FadeOut(shearplot),m.FadeIn(sumv),secs=.6)
         self.finish()
 
         self.begin(5)
         self.show(m.FadeOut(shearplot),m.FadeOut(value),m.FadeOut(reaction),m.FadeOut(msg),m.FadeOut(sumv),secs=.75)
         self.wait_until(2.8)
-        recap=label('BLOQUEO → GIROS → M → V',3.45,.82,28,S.moment_positive)
+        recap=label('RESTRICCIONES → GIROS',3.55,.82,25,S.moment_positive)
         self.show(m.FadeIn(recap),secs=.8)
         self.wait_until(6.8)
         one=label('1. Compatibilidad geométrica',3.45,.06,25,S.deformed)

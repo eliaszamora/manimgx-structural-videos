@@ -60,6 +60,14 @@ jobs:
         run: |
           set -o pipefail
           manimgx render studio_v3/demo/scene_v5.py 2>&1 | tee manimgx_studio_v3.log
+          # No "successful" video may contain invisible captions or layout collisions.
+          python - <<'PY'
+          from pathlib import Path
+          log=Path("manimgx_studio_v3.log").read_text()
+          if 'layout: no problems' not in log or 'outside the frame' in log:
+              raise SystemExit("V5 visual-layout QA FAIL; check ManimGX log for invisible/overlapping labels")
+          print("V5 ManimGX visual layout OK")
+          PY
           mkdir -p build/studio_v3
           python - <<'PY'
           from pathlib import Path

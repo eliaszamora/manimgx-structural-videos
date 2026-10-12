@@ -102,7 +102,7 @@ class V5CleanPortal(m.Scene):
         self.hold(max(0,t-self._chapter_elapsed_v5))
     def mark(self,text,color=None):
         """Replace a concise micro-annotation outside the structural geometry."""
-        new=txt(text,0,-4.64,26,color or C["muted"])
+        new=txt(text,0,-2.74,26,color or C["muted"])
         if getattr(self,"annotation",None) is not None:
             self.play_t(m.FadeOut(self.annotation),m.FadeIn(new),seconds=.4)
         else:self.play_t(m.FadeIn(new),seconds=.4)
@@ -134,7 +134,7 @@ class V5CleanPortal(m.Scene):
         self.mark("Un piso · una crujía · bases empotradas")
         self.until(5.65)
         load=force_at_joint(0)
-        f_label=txt("H = 24 kN",5.30,1.78,23,C["force"])
+        f_label=txt("H = 24 kN",5.40,2.93,23,C["force"])
         self.play_t(m.GrowArrow(load),m.FadeIn(f_label),seconds=1.05)
         self.until(9.9)
         self.mark("La fuerza actúa sobre el nudo superior derecho",C["force"])

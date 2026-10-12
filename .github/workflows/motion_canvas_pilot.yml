@@ -1,0 +1,37 @@
+name: Motion Canvas visual pilot - build check
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'motion_canvas_pilot/**'
+      - '.github/workflows/motion_canvas_pilot.yml'
+permissions:
+  contents: read
+jobs:
+  compare-source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.13'}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: Generate exactly matching FEM coordinates
+        run: |
+          python -m pip install -q numpy
+          python motion_canvas_pilot/export_fem.py
+      - name: Install Motion Canvas and build preview
+        working-directory: motion_canvas_pilot
+        run: |
+          npm install --no-audit --no-fund
+          npm run build
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: motion-canvas-project-preview
+          path: |
+            motion_canvas_pilot/dist/**
+            motion_canvas_pilot/src/data.json
+          if-no-files-found: warn

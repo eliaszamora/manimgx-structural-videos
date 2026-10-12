@@ -129,7 +129,7 @@ class PremiumDoubleCurvature(m.Scene):
     def construct(self):
         self.camera.background_color=bg
         self.add(ln((-6.52,2.66),(6.52,2.66),grid,2),
-                 ln((2.18,-2.81),(2.18,2.45),grid,2),
+                 ln((1.62,-2.81),(1.62,2.45),grid,2),
                  tx('ESTRUCTURAS   /   EXPLICACIONES VISUALES',-2.7,3.65,20,muted))
         left,right=node(0),node(4)
         supports=m.VGroup(support(left),support(right))
@@ -140,8 +140,9 @@ class PremiumDoubleCurvature(m.Scene):
         self.run(m.FadeIn(supports),m.FadeIn(frame),dt=1.75)
         self.info(3.25,'SISTEMA',['Bases empotradas','Nudos rígidos'])
         a=node(3)
-        F=arrow((a[0]-.08,a[1]),(a[0]+1.06,a[1]))
-        self.wait_to(6.0);self.run(m.GrowArrow(F),dt=1.30)
+        F=arrow((a[0]-.86,a[1]+.47),(a[0]-.04,a[1]+.47))
+        connector=ln((a[0],a[1]),(a[0],a[1]+.47),orange,2)
+        self.wait_to(6.0);self.run(m.GrowArrow(F),m.Create(connector),dt=1.30)
         self.info(10.0,'CARGA HORIZONTAL',['H = 24 kN  →','Equilibrio en bases'],orange)
         self.finish()
 
@@ -152,7 +153,8 @@ class PremiumDoubleCurvature(m.Scene):
         self.wait_to(5.65)
         b=node(3,AMP)
         self.run(m.Transform(frame,geometry(AMP,sea,8)),
-                 m.Transform(F,arrow((b[0]-.08,b[1]),(b[0]+1.06,b[1]))),dt=3.65)
+                 m.Transform(F,arrow((b[0]-.86,b[1]+.47),(b[0]-.04,b[1]+.47))),
+                 m.Transform(connector,ln((b[0],b[1]),(b[0],b[1]+.47),orange,2)),dt=3.65)
         tip=dotted_displacement()
         self.run(m.Create(tip),dt=.72)
         self.info(10.10,'ESCALA VISUAL',[f'Deformada ampliada ×{int(AMP)}','u superior ≈ 2,93 mm'],violet)
@@ -170,7 +172,7 @@ class PremiumDoubleCurvature(m.Scene):
         self.finish()
 
         self.chapter(3)
-        self.run(m.FadeOut(bottom),m.FadeOut(tangent),m.FadeOut(F),dt=.55)
+        self.run(m.FadeOut(bottom),m.FadeOut(tangent),m.FadeOut(F),m.FadeOut(connector),dt=.55)
         self.run(m.Transform(frame,geometry(0,sea,8)),m.FadeOut(base_reference),dt=1.48)
         self.info(2.15,'MOMENTO FLECTOR',['Eje: columna ORIGINAL','Negativo ←  |  + →'],red)
         plot=fixed_sign_diagram('M')

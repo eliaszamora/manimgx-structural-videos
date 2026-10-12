@@ -14,8 +14,10 @@ from geometry import (CASE,MEMBERS,LEFT,AMPLIFICATION,point,member_samples,
                       roof_joint,tangent_at,inflection_point,diagram_coords,
                       verify,H)
 verify()
-BG="#0B131C"; INK="#F4F3EE"; MUTED="#ACB8C3"; AXIS="#526578"
-FRAME="#6FE1CE"; LOAD="#F7AE76"; NEG="#EE8A86"; POS="#EFD18F"; ZERO="#C9B6FF"
+# Blue-first visual system inspired by 3Blue1Brown / classic Manim palettes.
+# Color carries meaning consistently: structure blue; load orange; ±M yellow/red.
+BG="#0B192C"; INK="#F2F6FA"; MUTED="#BDCBD9"; AXIS="#526780"
+FRAME="#58C4DD"; LOAD="#F4A261"; NEG="#FC6255"; POS="#F5D76E"; ZERO="#B9A0E5"
 ZOOM_X=-1.25
 def V(p):return [float(p[0]),float(p[1]),0]
 def label(t,x=0,y=0,size=24,color=INK):
@@ -45,7 +47,7 @@ class InflectionVisualPilot(m.Scene):
     def hold_until(self,target):
         if target>self.sec:self.wait(target-self.sec);self.sec=target
     def caption(self,message,color=MUTED):
-        target=label(message,0,-3.45,24,color)
+        target=label(message,0,-3.45,27,color)
         if getattr(self,"caption_current",None) is not None:
             self.act(m.FadeOut(self.caption_current),sec=.16)
         self.act(m.FadeIn(target),sec=.27)
@@ -53,7 +55,7 @@ class InflectionVisualPilot(m.Scene):
     def construct(self):
         self.sec=0
         self.camera.background_color=BG
-        brand=label("MECÁNICA ESTRUCTURAL  /  ESTUDIO VISUAL",0,3.65,18,MUTED)
+        brand=label("MECÁNICA ESTRUCTURAL  /  ESTUDIO VISUAL",0,3.65,19,MUTED)
         title=label("¿DÓNDE CAMBIA LA CURVATURA?",0,3.14,31,INK)
         frame=drawing(0)
         ghost=drawing(0,AXIS,3)
@@ -83,16 +85,16 @@ class InflectionVisualPilot(m.Scene):
         self.hold_until(13.2)
         # Tangent transported along the *deformed* FEM curve.
         tangent_1,pos=tangent_at(.13)
-        tangent=ln(*tangent_1,POS,4.5)
+        tangent=ln(*tangent_1,POS,6)
         marker=m.Dot(point=V(pos),radius=.095,color=POS)
         self.act(m.Create(tangent),m.FadeIn(marker),sec=.75)
         self.hold_until(14.4)
         ta,p=tangent_at(.38)
-        self.act(m.Transform(tangent,ln(*ta,POS,4.5)),
+        self.act(m.Transform(tangent,ln(*ta,POS,6)),
                  m.Transform(marker,m.Dot(point=V(p),radius=.095,color=POS)),sec=1.30)
         self.hold_until(16.1)
         tb,q=tangent_at(.83)
-        self.act(m.Transform(tangent,ln(*tb,POS,4.5)),
+        self.act(m.Transform(tangent,ln(*tb,POS,6)),
                  m.Transform(marker,m.Dot(point=V(q),radius=.095,color=POS)),sec=1.35)
         self.hold_until(17.55)
         self.act(m.FadeOut(tangent),m.FadeOut(marker),sec=.30)
@@ -122,7 +124,7 @@ class InflectionVisualPilot(m.Scene):
         self.act(m.FadeIn(neg),sec=1.16)
         self.act(m.FadeIn(pos),sec=1.16)
         sneg=ln((data["negative_tip"][0]-.60,-1.75),(data["negative_tip"][0]-.22,-1.75),NEG,6)
-        spos=label("+",data["positive_tip"][0]+.36,1.45,39,POS)
+        spos=label("+",data["positive_tip"][0]+.36,1.45,43,POS)
         self.act(m.FadeIn(sneg),m.FadeIn(spos),sec=.55)
         marker=m.Dot(point=V(data["mid"]),radius=.105,color=ZERO)
         label_zero=label("M = 0",1.0,data["mid"][1]+.05,27,ZERO)

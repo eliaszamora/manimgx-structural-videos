@@ -1,0 +1,28 @@
+name: QA de ingeniería estructural (gratis)
+on:
+  push:
+    branches: [main]
+    paths:
+      - "qa/**"
+      - "lesson_v2/**"
+      - ".agents/**"
+      - "AGENTS.md"
+      - ".github/workflows/engineering_qa.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  engineering:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Comprobar sintaxis y consistencia del guion
+        run: |
+          python -m py_compile qa/mechanics.py qa/test_mechanics.py qa/video_audit.py lesson_v2/story.py lesson_v2/scene.py lesson_v2/voice.py
+          python -c 'from lesson_v2.story import BEATS,TOTAL_SECONDS; assert len(BEATS)==8 and TOTAL_SECONDS==169; print("Guion:",len(BEATS),"capítulos",TOTAL_SECONDS,"segundos")'
+      - name: Testar equilibrio, signos, deformada y compatibilidad
+        run: python -m unittest discover -v -s qa -p 'test_*.py'

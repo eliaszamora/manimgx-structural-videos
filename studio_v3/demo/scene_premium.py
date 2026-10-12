@@ -129,7 +129,7 @@ class PremiumDoubleCurvature(m.Scene):
     def construct(self):
         self.camera.background_color=bg
         self.add(ln((-6.52,2.66),(6.52,2.66),grid,2),
-                 ln((1.62,-2.81),(1.62,2.45),grid,2),
+                 ln((2.18,-2.81),(2.18,2.45),grid,2),
                  tx('ESTRUCTURAS   /   EXPLICACIONES VISUALES',-2.7,3.65,20,muted))
         left,right=node(0),node(4)
         supports=m.VGroup(support(left),support(right))

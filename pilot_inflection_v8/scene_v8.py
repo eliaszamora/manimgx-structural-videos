@@ -148,7 +148,7 @@ class VisualInflectionV8(m.Scene):
                   m.FadeOut(ring),m.FadeOut(curv),m.FadeOut(note),
                   m.FadeOut(full[0]),m.FadeOut(original_axis),
                   m.FadeIn(axis),run_time=.85)
-        m0=write("MOMENTO EN EL EJE ORIGINAL",(-.40,1.95),23,QUIET)
+        m0=write("MOMENTO EN EL EJE ORIGINAL",(-.40,2.44),23,QUIET)
         self.play(m.FadeIn(m0),run_time=.35)
         pneg=m.ValueTracker(0.)
         ppos=m.ValueTracker(0.)

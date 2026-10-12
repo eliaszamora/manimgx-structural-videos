@@ -1,0 +1,101 @@
+name: V8 ManimGX Advanced - Visual Pilot
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'pilot_inflection_v8/**'
+      - '.github/workflows/pilot_inflection_v8.yml'
+permissions:
+  contents: read
+concurrency:
+  group: manimgx-advanced-v8-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  mechanics:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: FEM curvature and interpolation checks
+        run: |
+          python -m pip install -q 'numpy>=2,<3'
+          python -m unittest discover -s pilot_inflection_v8 -p 'test_*.py' -v
+          python pilot_inflection_v8/geometry_v8.py
+  render:
+    needs: mechanics
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install authentic ManimGX and software Vulkan
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg libvulkan1 mesa-vulkan-drivers libegl1 libgl1
+          python -m pip install -q 'numpy>=2,<3' manimgx
+      - name: Inspect a purposeful set of motion frames
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          manimgx inspect pilot_inflection_v8/scene_v8.py VisualInflectionV8 -t 2,4,6,8.7,11,14,16.5,19,22,24,end 2>&1 | tee v8_inspect.log
+      - name: Render full video V8
+        run: |
+          set -o pipefail
+          manimgx render pilot_inflection_v8/scene_v8.py VisualInflectionV8 -r 1920x1080 --fps 30 2>&1 | tee v8_render.log
+          mkdir -p build/v8
+          python - <<'PY'
+          from pathlib import Path
+          import shutil
+          options=list(Path("pilot_inflection_v8").glob("*.mp4"))
+          assert options, "No output MP4 from ManimGX"
+          latest=max(options,key=lambda p:p.stat().st_mtime)
+          shutil.copy2(latest,Path("build/v8/Inflection_V8_Advanced_ManimGX.mp4"))
+          print("RAW_RENDER",latest,latest.stat().st_size)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: V8-ManimGX-raw-with-inspection
+          path: |
+            build/v8/Inflection_V8_Advanced_ManimGX.mp4
+            v8_render.log
+            v8_inspect.log
+            pilot_inflection_v8/*.storyboard*.png
+          if-no-files-found: warn
+  audit:
+    needs: render
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: V8-ManimGX-raw-with-inspection
+          path: retrieved
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Sample video and verify actual movement
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
+          python -m pip install -q pillow numpy
+          mkdir -p build/v8/qa
+          python pilot_inflection_v8/video_qa_v8.py retrieved/build/v8/Inflection_V8_Advanced_ManimGX.mp4 build/v8/qa
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: V8-INFLECTION-VISUAL-VALIDATION
+          path: |
+            retrieved/build/v8/Inflection_V8_Advanced_ManimGX.mp4
+            build/v8/qa/**
+            retrieved/v8_inspect.log
+            retrieved/v8_render.log
+            retrieved/pilot_inflection_v8/*.storyboard*.png
+          if-no-files-found: warn

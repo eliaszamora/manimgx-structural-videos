@@ -1,56 +1,44 @@
 # ManimGX Structural Videos
 
-Proyecto gratuito de videos didácticos de análisis estructural, usando **ManimGX**, **Kokoro-82M** y **GitHub Actions** sobre CPU (sin GPU contratada, APIs pagadas ni tokens de Work).
+Proyecto gratuito de videos explicativos de **ingeniería estructural**, con renderizado auténtico en ManimGX (Rust / lavapipe CPU), voz neural en español y validaciones independientes.
 
-## Lección 02: voladizo (169 segundos)
+## Estado verificado (12 de octubre de 2026)
+- ✅ Renderizado ManimGX en GitHub Actions `ubuntu-latest`, sin GPU dedicada.
+- ✅ Síntesis de Kokoro-82M en CPU, exportación de MP4 con FFmpeg.
+- ✅ Laboratorio de comparación de cinco muestras, incluidas dos voces españolas masculinas de Kokoro y una variante mexicana de Piper.
+- ✅ Ocho tests de mecánica estructural: condiciones de borde, curvatura, momento, cortante y equilibrio de sección.
+- 🔎 Auditoría visual automática en integración: fotogramas por capítulo, muestra a 390 px, congelamientos, duración de pistas.
 
-Incluye 8 capítulos sincronizados por duraciones compartidas:
+**No confundir ejecución de tests con garantía de ausencia de errores**. La inspección audiovisual y la verificación ingenieril de cada dibujo son obligatorias.
 
-1. Pregunta estructural.
-2. Restricciones del empotramiento.
-3. Deformada y pendientes.
-4. Relación entre curvatura y momento.
-5. Sección aislada: equilibrio de fuerzas y momentos.
-6. Diagrama de momento (triangular negativo).
-7. Diagrama de cortante (rectangular positivo).
-8. Recapitulación.
+## Flujos
+- [Video completo V2](.github/workflows/lesson_v2.yml): anima y narra 169 s de ejemplo voladizo.
+- [Comparación de voces](.github/workflows/voice_lab.yml): cinco MP3 del mismo texto. Resultados en **Actions → Run → Artifacts**.
+- [Tests de mecánica](.github/workflows/engineering_qa.yml): pruebas sin render que se ejecutan automáticamente al modificar código relevante.
 
-Archivos:
-- `lesson_v2/story.py`: guion, subtítulos por capítulo y reloj único.
-- `lesson_v2/scene.py`: animación editable en ManimGX.
-- `lesson_v2/voice.py`: voz **masculina grave** `em_alex` (pitch reducido ~4,5 %, sin API de pago).
-- `.github/workflows/lesson_v2.yml`: renderiza, sintetiza voz, comprueba tiempos, une pistas y publica un MP4 descargable.
+## Archivos principales
+- `lesson_v2/scene.py`, `story.py`, `voice.py`: animación y narración con reloj compartido.
+- `voices/compare.py`: cinco variantes comparables Kokoro/Piper.
+- `qa/mechanics.py`, `qa/test_mechanics.py`: expresiones físicas y tests.
+- `qa/video_audit.py`: contact-sheet y revisión técnica del MP4.
+- `AGENTS.md` y `.agents/skills/structural-video-quality/SKILL.md`: contrato de calidad para Codex y otros agentes.
+- `docs/research-and-quality.md`: repositorios y skills externos evaluados.
 
-### Ejecutar sin instalar nada localmente
+## Convención de signos: voladizo
+Eje `x` desde el empotramiento al extremo libre, desplazamientos `v` positivos hacia arriba, fuerza externa `P` hacia abajo:
 
-1. Abrir **Actions** → **Leccion v2 ManimGX + voz masculina grave (gratis)**.
-2. Hacer clic en **Run workflow** → **Run workflow**.
-3. Esperar los trabajos `video`, `speech`, `export`.
-4. Al finalizar, abrir la ejecución y descargar el artefacto **leccion-v2-masculino-grave-FINAL**.
+```text
+v(x) = -P*x**2*(3*L-x)/(6*E*I)
+M(x) = -P*(L-x)
+V(x) = +P
+```
 
-El workflow también se ejecuta automáticamente al modificar archivos en `lesson_v2/`.
+- El empotramiento impide el desplazamiento y el giro: `v(0)=v'(0)=0`.
+- Se dibuja el momento **positivo bajo** el eje del elemento y **negativo sobre** él.
+- Para el cuerpo libre DERECHO de una sección, `+V` se dirige hacia arriba y el momento negativo es antihorario.
+- En este caso `M=EI*v''` y `V=dM/dx` bajo la convención especificada.
 
-### Control de calidad
-- ManimGX: 169 segundos 1920×1080, revisión visual y 0 problemas de diseño en 45 muestras tras corregir 4 superposiciones.
-- Narración: 8 segmentos con duración definida por el mismo guion; cada fragmento se comprueba para evitar cortes.
-- El multiplexado rellena con el último fotograma los intervalos estáticos de ManimGX (algunos quedan optimizados en el MP4 de origen), para no recortar los últimos segundos del audio con `-shortest`.
-- La compatibilidad de los cambios futuros se valida en las ejecuciones de Actions.
+## Fuente independiente
+La primera referencia es analítica. Para marcos con múltiples elementos se estudiará contraste por elementos finitos con [anaStruct](https://github.com/anastruct/anaStruct), respetando cuidadosamente sus convenciones.
 
-### Convención estructural
-
-Viga empotrada a la izquierda, `x` desde el empotramiento, `v` positivo hacia arriba, carga `P` descendente en `x=L`:
-
-- `v(x) = -P*x**2*(3*L-x)/(6*E*I)` (Euler-Bernoulli, pequeña deformación).
-- `M(x) = -P*(L-x)`.
-- `V(x) = +P` sobre la **cara izquierda del tramo derecho** cortado, con signo positivo hacia arriba.
-- Cortante positivo horizontal constante por ausencia de carga distribuida.
-- Momento **positivo bajo** el eje y **negativo sobre** el eje.
-- En la cara izquierda del tramo derecho, momento positivo es horario; el momento resistente aquí es antihorario y, por tanto, negativo.
-
-## Primera prueba (histórica)
-
-Los archivos `src/escena.py`, `src/voz.py` y `.github/workflows/render.yml` conservan el prototipo inicial de 31 segundos. Son independientes de la segunda lección.
-
-## Repositorios de origen
-- https://github.com/academa-labs/manimgx
-- https://github.com/hexgrad/kokoro
+Revisa las licencias de código y modelos de voz antes de redistribuir archivos distintos a nuestros propios videos.

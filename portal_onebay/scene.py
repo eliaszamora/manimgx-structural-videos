@@ -166,6 +166,9 @@ class PortalEngineeringLesson(m.Scene):
         self.finish()
 
         self.chapter(3)
+        # Restore the undeformed centerlines: internal-force diagrams belong to the
+        # original member local axes, NOT the amplified displaced geometry.
+        self.animate(m.Transform(steel,frame(GRAVITY,False)),m.FadeOut(ghost),t=1.0)
         # All FOUR elements use the SAME declared member-axis sign convention.
         physical_M_A=member_diagrams(GRAVITY,'M')
         panel_A=fact_panel([

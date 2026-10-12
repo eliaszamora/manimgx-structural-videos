@@ -129,7 +129,7 @@ jobs:
           count=int(v["nb_frames"])
           duration=float(probe("build/portal/alex_natural.wav","format=duration")["format"]["duration"])
           assert count>500 and duration>60
-          Path("build/portal/retime.env").write_text(f"RATE={count/duration:.9f}\\nDURATION={duration:.6f}\\n")
+          Path("build/portal/retime.env").write_text(f"RATE={count/duration:.9f}\nDURATION={duration:.6f}\n")
           print("Input frames",count,"voice seconds",duration,"normalized source fps",count/duration)
           PY
           source build/portal/retime.env

@@ -121,7 +121,7 @@ class InflectionVisualPilot(m.Scene):
                       color=POS,fill_color=POS,fill_opacity=.28,stroke_width=3)
         self.act(m.FadeIn(neg),sec=1.16)
         self.act(m.FadeIn(pos),sec=1.16)
-        sneg=label("−",data["negative_tip"][0]-.38,-1.75,39,NEG)
+        sneg=ln((data["negative_tip"][0]-.60,-1.75),(data["negative_tip"][0]-.22,-1.75),NEG,6)
         spos=label("+",data["positive_tip"][0]+.36,1.45,39,POS)
         self.act(m.FadeIn(sneg),m.FadeIn(spos),sec=.55)
         marker=m.Dot(point=V(data["mid"]),radius=.105,color=ZERO)

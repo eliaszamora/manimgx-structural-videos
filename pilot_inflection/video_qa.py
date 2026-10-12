@@ -12,12 +12,12 @@ def main():
   before=probe(src)
   v=next(s for s in before["streams"] if s["codec_type"]=="video")
   seconds=float(v.get("duration") or before["format"]["duration"])
-  assert seconds>20,f"Render appears unexpectedly short: {seconds}"
+  assert seconds>20,f"Render appears unexpectedly short: {seconds}"\n  # ManimGX may encode the final hold as container duration without packets;\n  # add up to seven seconds of end-hold and fade the final two seconds.
   # Keep Manim's presentation clock, pad only if source ends early; do not
   # stretch events by re-indexing all 60fps frames.
   final=dest/"Inflection_Visual_Pilot_V7.mp4"
   run(["ffmpeg","-hide_banner","-loglevel","error","-y","-i",str(src),
-       "-vf","fps=30,tpad=stop_mode=clone:stop_duration=4,trim=duration=32,format=yuv420p",
+       "-vf","fps=30,tpad=stop_mode=clone:stop_duration=7,trim=duration=32,fade=t=out:st=30:d=2,format=yuv420p",
        "-an","-c:v","libx264","-preset","veryfast","-crf","20","-movflags","+faststart",str(final)])
   post=probe(final)
   assert abs(float(post["format"]["duration"])-32)<.15

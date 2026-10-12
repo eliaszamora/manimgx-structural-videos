@@ -8,7 +8,7 @@ sys.path.insert(0,str(HERE.parent))
 import manimgx as m
 from portal_solver import solve,L,H
 from structural_viz.model import member_from_solver
-from structural_viz.manim_primitives import label,segment,curve,supports,diagram_panel
+from structural_viz.manim_primitives import label,segment,curve,supports,split_signed_plot
 from structural_viz.style import STYLE as S
 from story import BEATS,SECONDS_PER_BEAT,TOTAL_SECONDS
 
@@ -53,7 +53,7 @@ class ColumnaDoubleCurvature(m.Scene):
         self.add(brand,rail)
         axes=original()
         foundation=m.VGroup(supports(world((0,0))),supports(world((L,0))))
-        deform=deformed()
+        reference=m.VGroup(*[curve([world((s.x,s.y)) for s in e.samples],S.steel,2) for e in all_members])
         header2=label('MODELO Y RESTRICCIONES',3.52,2.21,26,S.muted)
         left_x=world((0,H))[0];right_x=world((L,H))[0]
 
@@ -73,7 +73,9 @@ class ColumnaDoubleCurvature(m.Scene):
         self.begin(1)
         self.show(m.FadeOut(horizontal_force),m.FadeOut(note),m.FadeOut(supportforces),secs=.75)
         self.wait_until(2.3)
-        self.show(m.Create(deform),secs=2.5)
+        # Interpolate material points under gradually applied load (linear-static scaling).
+        self.add(reference)
+        self.show(m.Transform(axes,deformed()),secs=3.6)
         dot=m.Dot(point=[*joint(1,True),0],radius=.105,color=S.inflection)
         self.show(m.FadeIn(dot),secs=.75)
         self.wait_until(8.9)
@@ -105,11 +107,13 @@ class ColumnaDoubleCurvature(m.Scene):
 
         self.begin(3)
         self.show(m.FadeOut(tangent_bottom),m.FadeOut(tangent_top),m.FadeOut(base_focus),m.FadeOut(explain),m.FadeOut(note),secs=.65)
-        panelheading=label('MOMENTO LOCAL · C1',3.62,2.26,24,S.ink)
-        self.show(m.Transform(header2,panelheading) if header2 in self.mobjects else m.FadeIn(panelheading),secs=.6)
-        self.wait_until(2.0)
-        plot=diagram_panel(col_left,'M',x=2.65,y=-1.52,length=3.10,amplitude=.85)
-        self.show(m.FadeIn(plot),secs=2.1)
+        # The original member axes, not the visually exaggerated displaced geometry,
+        # define the bending and shear diagram baselines.
+        self.show(m.Transform(axes,original()),m.FadeOut(reference),m.FadeOut(dot),secs=1.35)
+        panelheading=label('M SOBRE LA COLUMNA ORIGINAL',3.54,2.26,23,S.ink)
+        self.show(m.FadeIn(panelheading),secs=.60)
+        plot=split_signed_plot(col_left,'M',lambda pt:world(pt),scale=.72)
+        self.show(m.Create(plot),secs=2.1)
         low=label('Mbase = −23,73 kN·m',3.39,-2.1,25,S.moment_negative)
         self.show(m.FadeIn(low),secs=.65)
         self.wait_until(7.3)
@@ -123,8 +127,8 @@ class ColumnaDoubleCurvature(m.Scene):
         self.begin(4)
         self.show(m.FadeOut(plot),m.FadeOut(low),m.FadeOut(high),m.FadeOut(zero),m.FadeOut(panelheading),secs=.65)
         self.wait_until(2.15)
-        shearplot=diagram_panel(col_left,'V',x=2.63,y=-1.50,length=3.08,amplitude=.64)
-        self.show(m.FadeIn(shearplot),secs=1.8)
+        shearplot=split_signed_plot(col_left,'V',lambda pt:world(pt),scale=.54)
+        self.show(m.Create(shearplot),secs=1.8)
         value=label('Vlocal = +11,99 kN',3.52,-2.15,27,S.shear)
         self.show(m.FadeIn(value),secs=.8)
         self.wait_until(7.15)

@@ -27,8 +27,10 @@ def parametric(t,load=1.0):
     t=float(t);load=float(load)
     assert 0<=t<=1 and 0<=load<=1
     px,py=polynomials()
-    x=ORIGIN[0]+SCALE*(AMPLIFICATION*load*px(t))
-    y=ORIGIN[1]+SCALE*(H*t+AMPLIFICATION*load*py(t))
+    # Anchor fitted displacement exactly at the fixed end; a least-squares
+    # cubic otherwise introduces tiny nonzero support drift from sample rounding.
+    x=ORIGIN[0]+SCALE*(AMPLIFICATION*load*(px(t)-px(0)))
+    y=ORIGIN[1]+SCALE*(H*t+AMPLIFICATION*load*(py(t)-py(0)))
     return np.array([x,y,0.],dtype=float)
 
 def dparametric(t,load=1.0):

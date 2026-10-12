@@ -1,4 +1,4 @@
-name: Leccion v2 ManimGX + voz masculina grave (gratis)
+name: Lección V2 ManimGX + Alex natural (gratis)
 on:
   workflow_dispatch:
   push:
@@ -9,7 +9,24 @@ on:
 permissions:
   contents: read
 jobs:
+  engineering_gate:
+    name: Bloquear render si falla equilibrio o anaStruct
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Dependencia FEM independiente
+        run: python -m pip install "anastruct>=1.5,<2"
+      - name: Validación analítica + FEM antes de render
+        run: |
+          python -m py_compile lesson_v2/story.py lesson_v2/scene.py lesson_v2/voice.py qa/anastruct_crosscheck.py
+          python -m unittest discover -v -s qa -p 'test_*.py'
+          python -m qa.anastruct_crosscheck
   video:
+    needs: [engineering_gate]
     runs-on: ubuntu-latest
     timeout-minutes: 45
     name: Animación ManimGX lavapipe CPU
@@ -51,6 +68,7 @@ jobs:
             manimgx_v2.log
           if-no-files-found: warn
   speech:
+    needs: [engineering_gate]
     runs-on: ubuntu-latest
     timeout-minutes: 45
     name: Narrador masculino Kokoro em_alex (CPU)
@@ -108,21 +126,21 @@ jobs:
           # ManimGX optimiza los tramos estáticos sin codificar cada fotograma.
           # -shortest cortaba ~12 s del audio por el último PTS real del stream visual.
           # Rellenamos esos últimos segundos con el fotograma final y verificamos ambos streams.
-          ffmpeg -hide_banner -loglevel error -y -i build/video.mp4 -i build/narracion.wav -filter_complex "[0:v]tpad=stop_mode=clone:stop_duration=20,format=yuv420p[v]" -map "[v]" -map 1:a:0 -c:v libx264 -preset ultrafast -crf 19 -fps_mode:v vfr -c:a aac -b:a 192k -ar 48000 -t "$adur" -movflags +faststart build/leccion_v2_voz_grave.mp4
-          vd=$(ffprobe -v error -select_streams v:0 -show_entries stream=duration -of csv=p=0 build/leccion_v2_voz_grave.mp4)
-          ad=$(ffprobe -v error -select_streams a:0 -show_entries stream=duration -of csv=p=0 build/leccion_v2_voz_grave.mp4)
+          ffmpeg -hide_banner -loglevel error -y -i build/video.mp4 -i build/narracion.wav -filter_complex "[0:v]tpad=stop_mode=clone:stop_duration=20,format=yuv420p[v]" -map "[v]" -map 1:a:0 -c:v libx264 -preset ultrafast -crf 19 -fps_mode:v vfr -c:a aac -b:a 192k -ar 48000 -t "$adur" -movflags +faststart build/leccion_v2_alex_natural.mp4
+          vd=$(ffprobe -v error -select_streams v:0 -show_entries stream=duration -of csv=p=0 build/leccion_v2_alex_natural.mp4)
+          ad=$(ffprobe -v error -select_streams a:0 -show_entries stream=duration -of csv=p=0 build/leccion_v2_alex_natural.mp4)
           python -c "v=float('$vd');a=float('$ad');print('Salida final video=',v,'audio=',a);assert abs(v-a)<0.4, 'Video y voz tienen diferente duración'"
-          ffprobe -v error -show_entries format=duration -of csv=p=0 build/leccion_v2_voz_grave.mp4
+          ffprobe -v error -show_entries format=duration -of csv=p=0 build/leccion_v2_alex_natural.mp4
       - name: Auditoría mecánica, visual y de duración final
         run: |
           python -m pip install -q pillow
           python -m unittest discover -s qa -p 'test_*.py'
-          python qa/video_audit.py build/leccion_v2_voz_grave.mp4 --out build/video_qa --expected 169
+          python qa/video_audit.py build/leccion_v2_alex_natural.mp4 --out build/video_qa --expected 169
       - uses: actions/upload-artifact@v4
         with:
-          name: leccion-v2-masculino-grave-FINAL
+          name: leccion-v2-alex-natural-FINAL
           path: |
-            build/leccion_v2_voz_grave.mp4
+            build/leccion_v2_alex_natural.mp4
             build/report_voz.json
             build/video_qa/*.jpg
             build/video_qa/qa_report.json

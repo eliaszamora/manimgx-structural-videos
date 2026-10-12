@@ -91,6 +91,15 @@ jobs:
         with:
           name: neural-voice
           path: build/
+      - name: Instalar FFmpeg y organizar archivos de ambos artefactos
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
+          find build -maxdepth 3 -type f -print
+          test ! -f build/build/video.mp4 || mv build/build/video.mp4 build/video.mp4
+          test ! -f build/build/narracion.wav || mv build/build/narracion.wav build/narracion.wav
+          test -s build/video.mp4
+          test -s build/narracion.wav
       - name: Montaje final sin acelerar artificialmente la voz
         run: |
           vdur=$(ffprobe -v error -show_entries format=duration -of default=nokey=1:noprint_wrappers=1 build/video.mp4)

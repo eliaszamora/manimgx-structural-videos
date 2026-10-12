@@ -95,6 +95,10 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq ffmpeg
+          find build -maxdepth 4 -type f -print
+          test ! -f build/build/video.mp4 || mv build/build/video.mp4 build/video.mp4
+          test ! -f build/build/narracion.wav || mv build/build/narracion.wav build/narracion.wav
+          test ! -f build/build/report_voz.json || mv build/build/report_voz.json build/report_voz.json
           ls -lh build/
           test -s build/video.mp4 && test -s build/narracion.wav
           vdur=$(ffprobe -v error -show_entries format=duration -of csv=p=0 build/video.mp4)

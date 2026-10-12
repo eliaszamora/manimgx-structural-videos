@@ -140,18 +140,18 @@ jobs:
           cp collected/build/studio_v3/scene.mp4 build/studio_v3/scene.mp4
           cp collected/build/studio_v3/alex_natural.wav build/studio_v3/alex_natural.wav
           cp collected/build/studio_v3/cues.json build/studio_v3/cues.json
-          python - <<'PY'
-          import json,subprocess,pathlib
-          def p(f,items):return json.loads(subprocess.check_output(['ffprobe','-v','error','-show_entries',items,'-of','json',f],text=True))
-          count=int(p('build/studio_v3/scene.mp4','stream=nb_frames')['streams'][0]['nb_frames'])
-          duration=float(p('build/studio_v3/alex_natural.wav','format=duration')['format']['duration'])
-          assert count>300 and abs(duration-84)<.01,(count,duration)
-          rate=count/duration
-          pathlib.Path('build/studio_v3/clock.env').write_text(f'RATE={rate:.9f}\nDURATION={duration:.4f}\n')
-          print('Frames:',count,'Duration:',duration,'rate:',rate)
-          PY
-          source build/studio_v3/clock.env
-          ffmpeg -hide_banner -loglevel error -y -i build/studio_v3/scene.mp4 -i build/studio_v3/alex_natural.wav -filter_complex "[0:v]setpts=N/(${RATE}*TB),fps=30,format=yuv420p[v]" -map '[v]' -map 1:a:0 -c:v libx264 -crf 20 -preset veryfast -c:a aac -b:a 192k -t "${DURATION}" -movflags +faststart build/studio_v3/Portico_V5_Estilo_Limpio_Alex_Natural.mp4
+          # Preserve the ORIGINAL PTS from ManimGX. Uniform frame-index re-clocking
+          # displaced meaningful movements relative to Alex's sentence timestamps.
+          # The engine's source has about 80s of decoded picture over an 84s
+          # container; hold only the final diagram as needed to reach the 84s voice.
+          ffmpeg -hide_banner -loglevel error -y \
+            -i build/studio_v3/scene.mp4 -i build/studio_v3/alex_natural.wav \
+            -filter_complex "[0:v]fps=30,tpad=stop_mode=clone:stop_duration=6,trim=duration=84,setpts=PTS-STARTPTS,format=yuv420p[v]" \
+            -map "[v]" -map 1:a:0 -c:v libx264 -crf 20 -preset veryfast \
+            -c:a aac -b:a 192k -t 84 -movflags +faststart \
+            build/studio_v3/Portico_V5_Estilo_Limpio_Alex_Natural.mp4
+          ffprobe -v error -show_entries format=duration:stream=codec_type,duration \
+            -of json build/studio_v3/Portico_V5_Estilo_Limpio_Alex_Natural.mp4
       - name: Audit rendered MP4 incl mobile frames
         run: |
           python studio_v3/qa/video_check.py build/studio_v3/Portico_V5_Estilo_Limpio_Alex_Natural.mp4 --output build/studio_v3/qa --duration 84

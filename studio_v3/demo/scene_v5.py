@@ -104,7 +104,9 @@ class V5CleanPortal(m.Scene):
         """Replace a concise micro-annotation outside the structural geometry."""
         new=txt(text,0,-2.74,26,color or C["muted"])
         if getattr(self,"annotation",None) is not None:
-            self.play_t(m.FadeOut(self.annotation),m.FadeIn(new),seconds=.4)
+            # Never crossfade two full technical sentences; they become unreadable.
+            self.play_t(m.FadeOut(self.annotation),seconds=.18)
+            self.play_t(m.FadeIn(new),seconds=.22)
         else:self.play_t(m.FadeIn(new),seconds=.4)
         self.annotation=new
     def chapter(self,n,title):

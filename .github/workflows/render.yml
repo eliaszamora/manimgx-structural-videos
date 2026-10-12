@@ -1,0 +1,106 @@
+name: Prueba gratuita ManimGX y voz
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - '.github/workflows/render.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  render:
+    name: Animar con ManimGX (CPU)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Dependencias gráficas por software
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg libvulkan1 mesa-vulkan-drivers libegl1 libgl1
+      - name: Instalar ManimGX oficial
+        run: python -m pip install --upgrade pip manimgx
+      - name: Renderizar escena genuina
+        run: |
+          set -o pipefail
+          manimgx render src/escena.py 2>&1 | tee render.log
+      - name: Identificar MP4 renderizado
+        run: |
+          mkdir -p build
+          find . -name '*.mp4' -not -path './build/*' -print
+          python - <<'PY'
+          from pathlib import Path
+          import shutil
+          files=[p for p in Path('.').rglob('*.mp4') if 'build' not in p.parts]
+          if not files: raise SystemExit('ManimGX no produjo un MP4; revisar el paso anterior')
+          f=max(files,key=lambda x:x.stat().st_mtime)
+          shutil.copy2(f,'build/video.mp4')
+          print('Archivo elegido:',f)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: manimgx-render
+          path: |
+            build/video.mp4
+            render.log
+          if-no-files-found: warn
+  voice:
+    name: Voz neural en español (CPU)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Dependencias de audio
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq espeak-ng ffmpeg libsndfile1
+      - name: Instalar Kokoro-82M
+        run: python -m pip install --upgrade pip "kokoro>=0.9.4" soundfile
+      - name: Generar narración sin API de pago
+        run: |
+          set -o pipefail
+          python src/voz.py 2>&1 | tee voice.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: neural-voice
+          path: |
+            build/narracion.wav
+            voice.log
+          if-no-files-found: warn
+  mix:
+    name: Unir video y narración
+    needs: [render, voice]
+    if: ${{ needs.render.result == 'success' && needs.voice.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: manimgx-render
+          path: build/
+      - uses: actions/download-artifact@v4
+        with:
+          name: neural-voice
+          path: build/
+      - name: Montaje final sin acelerar artificialmente la voz
+        run: |
+          vdur=$(ffprobe -v error -show_entries format=duration -of default=nokey=1:noprint_wrappers=1 build/video.mp4)
+          adur=$(ffprobe -v error -show_entries format=duration -of default=nokey=1:noprint_wrappers=1 build/narracion.wav)
+          target=$(python -c "print(max(float('$vdur'),float('$adur'))+1.0)")
+          echo "Video=${vdur}s, voz=${adur}s, montaje=${target}s"
+          ffmpeg -hide_banner -loglevel error -y -i build/video.mp4 -i build/narracion.wav -filter_complex "[0:v]tpad=stop_mode=clone:stop_duration=120[v];[1:a]apad[a]" -map "[v]" -map "[a]" -t "$target" -c:v libx264 -preset veryfast -crf 20 -pix_fmt yuv420p -c:a aac -b:a 192k -movflags +faststart build/voladizo_narrado.mp4
+          ffprobe -v error -show_entries format=duration -of default=nokey=1:noprint_wrappers=1 build/voladizo_narrado.mp4
+      - uses: actions/upload-artifact@v4
+        with:
+          name: video-estructural-con-voz
+          path: build/voladizo_narrado.mp4
+          if-no-files-found: error

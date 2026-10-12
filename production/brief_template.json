@@ -1,0 +1,57 @@
+{
+  "version": 1,
+  "lesson_id": "REEMPLAZAR_TEMA",
+  "intended_audience": "Ingenieros civiles junior en Chile",
+  "presentation": {
+    "format": "16:9",
+    "render_engine": "ManimGX",
+    "language": "es-CL",
+    "spoken_voice": "kokoro/em_alex",
+    "voice_pitch_shift": 0,
+    "max_static_hold_unreviewed_seconds": 5,
+    "mobile_review_width_px": 390
+  },
+  "mechanical_contract": {
+    "structural_system": "",
+    "supports_and_restrained_dofs": [],
+    "load_cases": [],
+    "global_axes": "x derecha, y arriba",
+    "local_axes_by_member": [],
+    "sign_conventions": {
+      "cut_faces": "explicar siempre qué cuerpo libre se muestra",
+      "bending_plot": "positivo bajo la línea; negativo sobre",
+      "shear_plot": "definir y verificar por cara de corte"
+    },
+    "deformation_scale": "explicar explícitamente exageración de la deformada",
+    "reference_solver": "analítica y anaStruct/PyNite independiente",
+    "acceptance_tests": []
+  },
+  "learning_arc": {
+    "initial_question": "¿Por qué esta estructura adopta ESTA deformada y no otra?",
+    "likely_misconception": "",
+    "visual_evidence_before_equation": true,
+    "final_takeaway": ""
+  },
+  "beats": [
+    {
+      "beat_id": "01",
+      "duration_seconds": 15,
+      "learning_claim": "",
+      "objects_visible": [],
+      "camera_plan": "estática salvo necesidad",
+      "spoken_script": "",
+      "visible_action": "",
+      "causal_why": "",
+      "physical_evidence": "",
+      "formula_after_visual": "",
+      "pass_criteria": []
+    }
+  ],
+  "quality_gates": {
+    "math_tests": "PASS requerido",
+    "render_runtime": "PASS requerido",
+    "mobile_frames": "revisión manual requerida",
+    "narration_meaning": "revisión manual requerida",
+    "safety_note": "Nunca marcar un diagrama correcto solo porque no desbordó el canvas"
+  }
+}

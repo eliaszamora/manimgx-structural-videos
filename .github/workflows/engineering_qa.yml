@@ -26,3 +26,7 @@ jobs:
           python -c 'from lesson_v2.story import BEATS,TOTAL_SECONDS; assert len(BEATS)==8 and TOTAL_SECONDS==169; print("Guion:",len(BEATS),"capítulos",TOTAL_SECONDS,"segundos")'
       - name: Testar equilibrio, signos, deformada y compatibilidad
         run: python -m unittest discover -v -s qa -p 'test_*.py'
+      - name: Instalar solucionador FEM independiente
+        run: python -m pip install "anastruct>=1.5,<2"
+      - name: Contrastar desplazamiento y giro con anaStruct
+        run: python -m qa.anastruct_crosscheck

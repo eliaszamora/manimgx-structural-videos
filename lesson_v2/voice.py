@@ -1,4 +1,4 @@
-"""Voz masculina española Kokoro em_alex, capítulos sincronizados a ManimGX."""
+"""Voz Kokoro Alex natural, sin modificación artificial del tono."""
 import sys
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).parent))
@@ -12,14 +12,14 @@ SAMPLE_RATE = 24000
 VOICE = "em_alex"
 START_PAUSE = .65
 END_PAUSE = .65
-PITCH = .955  # Baja ~0.8 semitonos, manteniendo aproximadamente la duración.
+PITCH = 1.0  # Selección del usuario: Alex natural (sin bajar el tono).
 
 def filtered(data, tmp):
     before=tmp/"original.wav"
-    after=tmp/"grave.wav"
+    after=tmp/"master.wav"
     sf.write(before,data,SAMPLE_RATE)
-    # Pitch discretamente menor, manteniendo velocidad y aplicando compresión leve.
-    filt=f"asetrate={SAMPLE_RATE*PITCH:.3f},aresample={SAMPLE_RATE},atempo={1/PITCH:.6f},highpass=f=65,acompressor=threshold=-23dB:ratio=1.8:attack=20:release=160"
+    # Misma voz y velocidad que la prueba 01; solo normalización de niveles.
+    filt="highpass=f=65,loudnorm=I=-18:TP=-2:LRA=9"
     subprocess.run(["ffmpeg","-hide_banner","-loglevel","error","-y","-i",str(before),
                     "-af",filt,"-ar",str(SAMPLE_RATE),str(after)],check=True)
     arr,sr=sf.read(after,dtype="float32")
@@ -32,7 +32,7 @@ def fit(data,capacity,tmp):
         return data,1.0
     # Ajuste solo si una narración supera la ventana; mantener el tono.
     factor = len(data)/maximum
-    if factor>1.22: raise ValueError(f"Narración demasiado larga ({factor:.2f}x); ajustar guion, no recortar")
+    if factor>1.10: raise ValueError(f"Narración demasiado larga ({factor:.2f}x); ajustar guion, no acelerar artificialmente")
     src=tmp/"long.wav"
     dst=tmp/"fitted.wav"
     sf.write(src,data,SAMPLE_RATE)
@@ -71,6 +71,6 @@ def main():
     assert len(out)==TOTAL_SECONDS*SAMPLE_RATE
     sf.write("build/narracion.wav",out,SAMPLE_RATE)
     Path("build/report_voz.json").write_text(json.dumps(report,ensure_ascii=False,indent=2))
-    print(f"HECHO {len(out)/SAMPLE_RATE:.2f}s, masculina {VOICE}, tono {PITCH}",flush=True)
+    print(f"HECHO {len(out)/SAMPLE_RATE:.2f}s, voz Alex natural {VOICE}, sin pitch artificial",flush=True)
 if __name__=="__main__":
     main()

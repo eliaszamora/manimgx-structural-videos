@@ -45,3 +45,14 @@ Prohibido: frases como «se dobla a la derecha» sin justificar por cargas, equi
 
 ### Limitación
 Las reglas de Manim CE/ManimGL no son intercambiables al 100% con ManimGX. Adaptar ideas, no copiar APIs sin contrastarlas. Los tests y fotogramas detectan muchas fallas, pero el juicio ingenieril y la revisión audiovisual siguen siendo imprescindibles.
+
+## Integración de herramientas por función
+
+- **Manim Video Lab (dirección):** crear una ficha de director y check preflight por capítulo: pregunta causal, evidencia visible, movimiento que la demuestra, fórmula revelada después y criterio de aprobación.
+- **Motion Skills / 3brown1blue (diseño):** jerarquía de tipografía, zonas seguras, una sola variable visual protagonista por bloque, transiciones que enseñen dependencia, y ninguna etiqueta sobre otro elemento.
+- **anaStruct (cálculo):** modelar la estructura en un solucionador de elementos finitos independiente, contrastar desplazamientos, reacciones y esfuerzos, documentar conversión entre convenciones; para voladizo: `python -m qa.anastruct_crosscheck`.
+- **Animation Frame QA (evidencia):** crear contact sheet en cada beat, vistas móviles y alertas de congelamientos. Registrar problemas con timestamp, corregir y volver a renderizar.
+- **ManimGX (entrega):** seguir usando motor oficial, sin instalar Manim CE salvo pruebas comparativas aisladas. Producir MP4 y componentes matemáticos desde objetos geométricos verificados.
+- **Kokoro (narración):** `em_alex` **natural** por defecto, sin pitch shift, y control de audio por beat.
+
+El proceso de revisión es **dos pasadas máximas por defecto**: 1) diagnosticar problemas concretos 2) aplicar correcciones y volver a auditar. Si la mecánica está mal, detener publicación sin importar el número de pasadas.

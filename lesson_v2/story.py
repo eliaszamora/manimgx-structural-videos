@@ -54,7 +54,7 @@ BEATS = [
         "duration": 17,
         "heading": "UNA LÓGICA, TRES DIBUJOS",
         "caption": "Restricciones → deformada → momento → cortante",
-        "narration": "Recapitulemos. Primero, las restricciones fijan el comienzo de la deformada. Después, la carga y la compatibilidad determinan su curvatura. El equilibrio explica el momento triangular negativo y el cortante constante positivo. Si invirtiéramos la carga, se invertirían también la deformada y los signos de ambos diagramas.",
+        "narration": "Las restricciones explican el inicio de la deformada. La curvatura revela el momento, y el equilibrio determina el cortante. Si cambiamos el sentido de la fuerza, cambian también la deformada y los signos de ambos diagramas.",
     },
 ]
 TOTAL_SECONDS = sum(x["duration"] for x in BEATS)

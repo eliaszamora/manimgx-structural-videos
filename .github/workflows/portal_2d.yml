@@ -23,7 +23,7 @@ jobs:
       - name: Validate equilibrium, symmetry, sway and FEM
         run: |
           python -m py_compile portal_onebay/*.py
-          (cd portal_onebay && python mechanics.py && python verify_anastruct.py)
+          (cd portal_onebay && python mechanics.py && python verify_anastruct.py && python audit_diagrams.py)
   visual:
     name: Render actual ManimGX
     needs: engineering

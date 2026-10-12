@@ -114,7 +114,7 @@ class VisualInflectionV8(m.Scene):
                   self.camera.frame.animate.scale(.70).move_to(np.array([-2.6,-.09,0.])),
                   run_time=2.55)
         # The original axis persists as a faint reference. No graphical jump.
-        focus=write("GIRO DE LA TANGENTE",(.50,1.98),28)
+        focus=write("GIRO DE LA TANGENTE",(.02,1.98),27)
         original_axis=m.DashedLine(V((X0,Y0)),V((X0,Y0+S*H)),
                       color=GHOST,stroke_width=2,dash_length=.11)
         self.play(m.FadeIn(focus),m.FadeIn(original_axis),run_time=.40)
@@ -135,20 +135,20 @@ class VisualInflectionV8(m.Scene):
         above=split_col(INFLECTION_T,1,POS)
         pivot=m.Dot(point=parametric(INFLECTION_T),radius=.15,color=ZERO)
         ring=m.Circle(radius=.27,color=ZERO,stroke_width=3).move_to(parametric(INFLECTION_T))
-        curv=write("CAMBIA LA CONCAVIDAD",(.40,1.98),26,QUIET)
+        curv=write("CAMBIA LA CONCAVIDAD",(-.25,1.98),25,QUIET)
         note=write("NO ES UNA RÓTULA",(-.76,-2.47),27,ZERO)
         self.play(m.FadeIn(below),m.FadeIn(above),m.FadeIn(pivot),
                   m.Create(ring),m.FadeIn(curv),run_time=.95)
         self.play(m.FadeIn(note),run_time=.32)
         self.wait(.65)
+        # Crossfade directly to the non-deformed reference axis.
+        # Never leave the scene blank between physical curvature and M.
+        axis=line((X0,Y0),(X0,Y0+S*H),TEXT,4)
         self.play(m.FadeOut(below),m.FadeOut(above),m.FadeOut(pivot),
                   m.FadeOut(ring),m.FadeOut(curv),m.FadeOut(note),
                   m.FadeOut(full[0]),m.FadeOut(original_axis),
-                  run_time=.65)
-        # Exactly ORIGINAL straight member: no distorted baseline behind diagram.
-        axis=line((X0,Y0),(X0,Y0+S*H),TEXT,4)
-        self.play(m.FadeIn(axis),run_time=.55)
-        m0=write("MOMENTO SOBRE EL EJE ORIGINAL",(.27,1.95),23,QUIET)
+                  m.FadeIn(axis),run_time=.85)
+        m0=write("MOMENTO EN EL EJE ORIGINAL",(-.40,1.95),23,QUIET)
         self.play(m.FadeIn(m0),run_time=.35)
         pneg=m.ValueTracker(0.)
         ppos=m.ValueTracker(0.)
@@ -160,6 +160,6 @@ class VisualInflectionV8(m.Scene):
         d=m.Dot(point=V((X0,Y0+S*INFLECTION_H)),radius=.12,color=ZERO)
         z=write("M = 0",(X0+1.22,Y0+S*INFLECTION_H+.05),28,ZERO)
         self.play(m.FadeIn(d),m.FadeIn(z),run_time=.55)
-        end=write("INFLEXIÓN ↔ MOMENTO NULO",(.42,-1.92),25,QUIET)
+        end=write("INFLEXIÓN = M NULO",(-.35,-1.92),25,QUIET)
         self.play(m.FadeIn(end),run_time=.55)
         self.wait(.95)

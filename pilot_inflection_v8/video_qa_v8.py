@@ -48,7 +48,7 @@ def main():
         mean=sum(ImageStat.Stat(diff).mean)/3
         movement.append(round(mean,3))
     assert min(movement)>.12,("Insufficient visible load movement",movement)
-    assert min(s["contrast_sd"] for s in stats)>5,"Blank sample"
+    assert min(s["contrast_sd"] for s in stats)>5,"Near-blank transitional frame: redesign the crossfade"
     fr=subprocess.run(["ffmpeg","-hide_banner","-loglevel","info","-i",str(video),
              "-vf","freezedetect=n=-60dB:d=3","-f","null","-"],capture_output=True,text=True)
     frozen=[line.strip() for line in fr.stderr.splitlines() if "freeze_duration:" in line]

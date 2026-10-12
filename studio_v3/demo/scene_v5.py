@@ -93,13 +93,13 @@ def diagram(kind):
 class V5CleanPortal(m.Scene):
     def play_t(self,*actions,seconds=1):
         self.play(*actions,run_time=seconds)
-        self.clock+=seconds
+        self._chapter_elapsed_v5+=seconds
     def hold(self,seconds):
         if seconds>0:
             self.wait(seconds)
-            self.clock+=seconds
+            self._chapter_elapsed_v5+=seconds
     def until(self,t):
-        self.hold(max(0,t-self.clock))
+        self.hold(max(0,t-self._chapter_elapsed_v5))
     def mark(self,text,color=None):
         """Replace a concise micro-annotation outside the structural geometry."""
         new=txt(text,0,2.56,25,color or C["muted"])
@@ -108,7 +108,7 @@ class V5CleanPortal(m.Scene):
         else:self.play_t(m.FadeIn(new),seconds=.4)
         self.annotation=new
     def chapter(self,n,title):
-        self.clock=0
+        self._chapter_elapsed_v5=0
         heading=txt(title,-3.23,3.39,29,C["ink"])
         number=txt(f"{n+1:02d} / 06",5.85,3.38,20,C["muted"])
         if n==0:
@@ -119,8 +119,8 @@ class V5CleanPortal(m.Scene):
             self.heading=heading;self.number=number
             self.play_t(m.FadeIn(heading),m.FadeIn(number),seconds=.38)
     def end_chapter(self):
-        if self.clock>SECONDS_PER_BEAT+.03:
-            raise RuntimeError(f"chapter exceeded 14s by {self.clock-14:.2f}s")
+        if self._chapter_elapsed_v5>SECONDS_PER_BEAT+.03:
+            raise RuntimeError(f"chapter exceeded 14s by {self._chapter_elapsed_v5-14:.2f}s")
         self.until(SECONDS_PER_BEAT)
 
     def construct(self):

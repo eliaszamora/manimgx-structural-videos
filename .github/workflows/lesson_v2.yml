@@ -1,0 +1,111 @@
+name: Leccion v2 ManimGX + voz masculina grave (gratis)
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "lesson_v2/**"
+      - ".github/workflows/lesson_v2.yml"
+permissions:
+  contents: read
+jobs:
+  video:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    name: Animación ManimGX lavapipe CPU
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Instalar software libre para gráficos
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg libvulkan1 mesa-vulkan-drivers libegl1 libgl1
+          python -m pip install -q manimgx
+      - name: Verificar narración y código
+        run: |
+          python -m py_compile lesson_v2/story.py lesson_v2/scene.py lesson_v2/voice.py
+          python -c 'from lesson_v2.story import BEATS,TOTAL_SECONDS; print("Capítulos",len(BEATS),"Segundos",TOTAL_SECONDS)'
+      - name: Renderizar clase genuina en ManimGX
+        run: |
+          set -o pipefail
+          manimgx render lesson_v2/scene.py 2>&1 | tee manimgx_v2.log
+          mkdir -p build
+          python - <<'PY'
+          from pathlib import Path
+          import shutil
+          vids=[p for p in Path('.').rglob("*.mp4") if "build" not in p.parts]
+          if not vids: raise SystemExit("No se generó video")
+          p=max(vids,key=lambda x:x.stat().st_mtime)
+          print("Encontrado",p)
+          shutil.copy2(p,"build/video.mp4")
+          PY
+          ffprobe -v error -show_entries format=duration,width,height -of default=noprint_wrappers=1 build/video.mp4
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: manimgx-lesson-v2
+          path: |
+            build/video.mp4
+            manimgx_v2.log
+          if-no-files-found: warn
+  speech:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    name: Narrador masculino Kokoro em_alex (CPU)
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Instalación voz libre
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq espeak-ng ffmpeg libsndfile1
+          python -m pip install -q "kokoro>=0.9.4" soundfile
+      - name: Narrar capítulos y ajustar ritmo sin cortes
+        run: |
+          set -o pipefail
+          python lesson_v2/voice.py 2>&1 | tee kokoro_v2.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: kokoro-masculino-v2
+          path: |
+            build/narracion.wav
+            build/report_voz.json
+            kokoro_v2.log
+          if-no-files-found: warn
+  export:
+    name: Empaquetar MP4 con audio en fase
+    needs: [video, speech]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: manimgx-lesson-v2
+          path: build
+      - uses: actions/download-artifact@v4
+        with:
+          name: kokoro-masculino-v2
+          path: build
+      - name: Probar duraciones y exportar
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
+          ls -lh build/
+          test -s build/video.mp4 && test -s build/narracion.wav
+          vdur=$(ffprobe -v error -show_entries format=duration -of csv=p=0 build/video.mp4)
+          adur=$(ffprobe -v error -show_entries format=duration -of csv=p=0 build/narracion.wav)
+          python -c "a=float('$adur');v=float('$vdur');print('Video',v,'Voz',a);assert abs(v-a) < 1.5, 'Desajuste entre capítulos y audio'"
+          ffmpeg -hide_banner -loglevel error -y -i build/video.mp4 -i build/narracion.wav -map 0:v:0 -map 1:a:0 -c:v copy -c:a aac -b:a 192k -ar 48000 -shortest -movflags +faststart build/leccion_v2_voz_grave.mp4
+          ffprobe -v error -show_entries format=duration -of csv=p=0 build/leccion_v2_voz_grave.mp4
+      - uses: actions/upload-artifact@v4
+        with:
+          name: leccion-v2-masculino-grave-FINAL
+          path: |
+            build/leccion_v2_voz_grave.mp4
+            build/report_voz.json
+          if-no-files-found: error

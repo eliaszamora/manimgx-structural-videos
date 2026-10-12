@@ -1,0 +1,51 @@
+name: Laboratorio gratuito de voces masculinas
+on:
+  push:
+    branches: [main]
+    paths:
+      - "voices/**"
+      - ".github/workflows/voice_lab.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  samples:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Instalar voz abierta, audio y FFmpeg
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq espeak-ng ffmpeg libsndfile1
+          python -m pip install -q "kokoro>=0.9.4" "piper-tts" soundfile
+      - name: Sintetizar el mismo texto con voces alternativas
+        run: |
+          set -o pipefail
+          python voices/compare.py 2>&1 | tee voces.log
+      - name: Auditar cantidad, codecs y duraciones
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          base=Path("build/voice_comparison")
+          manifest=json.loads((base/"manifest.json").read_text())
+          assert len(manifest)>=4
+          for f in manifest:
+              assert 5 < f['seconds'] < 150
+              assert (base/f["file"]).stat().st_size>8000
+              print(f['file'],f['seconds'])
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: comparar-voces-masculinas-espanol
+          path: |
+            build/voice_comparison/*.mp3
+            build/voice_comparison/manifest.json
+            build/voice_comparison/piper_error.txt
+            voces.log
+          if-no-files-found: warn

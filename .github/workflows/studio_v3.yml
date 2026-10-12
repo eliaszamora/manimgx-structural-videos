@@ -3,7 +3,9 @@ on:
   push:
     branches: [main]
     paths:
-      - 'studio_v3/**'
+      - 'studio_v3/demo/**'
+      - 'studio_v3/structural_viz/**'
+      - 'studio_v3/qa/**'
       - '.github/workflows/studio_v3.yml'
   workflow_dispatch:
 permissions:

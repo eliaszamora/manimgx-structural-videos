@@ -20,8 +20,8 @@ R=solve("lateral")
 MEM=[member_from_solver(e,f"e{i}") for i,e in enumerate(R["elements"])]
 COL=MEM[0]
 AMP=155.0
-OX,OY=-2.85,-2.25
-SC=1.03
+OX,OY=-4.90,-3.35
+SC=1.75
 C=dict(bg="#0A131F",ink="#EDF3FA",muted="#9AABB9",neutral="#8999A7",
        original="#546576",deform="#35D4BF",force="#FFAE7B",
        moment_neg="#FF8679",moment_pos="#FFCC83",cut="#83B8FF",pin="#D5B2FF")
@@ -51,8 +51,8 @@ def joint(idx,alpha=0):
 def fixed_foot(p):
     """Conventional fixed base: footing line and diagonal foundation hatch BELOW column."""
     x,y=p
-    baseline=line((x-.47,y-.025),(x+.47,y-.025),C["ink"],5)
-    hatch=[line((x-.45+i*.165,y-.04),(x-.60+i*.165,y-.31),C["neutral"],2)
+    baseline=line((x-.62,y-.025),(x+.62,y-.025),C["ink"],5)
+    hatch=[line((x-.61+i*.22,y-.04),(x-.80+i*.22,y-.36),C["neutral"],2)
            for i in range(6)]
     return m.VGroup(baseline,*hatch)
 def force_at_joint(alpha):
@@ -70,7 +70,7 @@ def diagram(kind):
     x,y=w((0,0));Y=w((0,H))[1]
     values=[getattr(s,kind) for s in COL.samples]
     norm=max(abs(q) for q in values)
-    scale=.85 if kind=="M" else .59
+    scale=1.15 if kind=="M" else .85
     offset=lambda q:scale*q/norm
     if kind=="M":
         z=COL.zeros("M")[0];zy=y+(Y-y)*z
@@ -102,7 +102,7 @@ class V5CleanPortal(m.Scene):
         self.hold(max(0,t-self._chapter_elapsed_v5))
     def mark(self,text,color=None):
         """Replace a concise micro-annotation outside the structural geometry."""
-        new=txt(text,0,2.56,25,color or C["muted"])
+        new=txt(text,0,-4.64,26,color or C["muted"])
         if getattr(self,"annotation",None) is not None:
             self.play_t(m.FadeOut(self.annotation),m.FadeIn(new),seconds=.4)
         else:self.play_t(m.FadeIn(new),seconds=.4)
@@ -134,7 +134,7 @@ class V5CleanPortal(m.Scene):
         self.mark("Un piso · una crujía · bases empotradas")
         self.until(5.65)
         load=force_at_joint(0)
-        f_label=txt("H = 24 kN",4.54,2.03,22,C["force"])
+        f_label=txt("H = 24 kN",5.30,1.78,23,C["force"])
         self.play_t(m.GrowArrow(load),m.FadeIn(f_label),seconds=1.05)
         self.until(9.9)
         self.mark("La fuerza actúa sobre el nudo superior derecho",C["force"])

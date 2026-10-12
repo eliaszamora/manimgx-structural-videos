@@ -11,7 +11,7 @@ from PIL import Image,ImageOps,ImageDraw,ImageFont,ImageStat
 def probe(path):
     return json.loads(check_output(
         ["ffprobe","-v","error","-show_entries",
-         "format=duration,size:stream=codec_type,codec_name,width,height,avg_frame_rate",
+         "format=duration,size:stream=codec_type,codec_name,width,height,avg_frame_rate,duration",
          "-of","json",str(path)],text=True))
 
 def snapshot(video,time,out,width=640):
@@ -28,6 +28,11 @@ def audit(video,target,expected):
     vs=next((s for s in streams if s.get("codec_type")=="video"),None)
     audio=next((s for s in streams if s.get("codec_type")=="audio"),None)
     if not vs: raise AssertionError("Falta pista de video")
+    video_seconds=float(vs.get("duration") or duration)
+    if abs(video_seconds-expected)>2 or abs(video_seconds-duration)>2:
+        raise AssertionError(f"Pista de video truncada: video={video_seconds:.2f}, contenedor={duration:.2f}, esperado={expected:.2f}")
+    if audio and abs(float(audio.get("duration") or duration)-expected)>2:
+        raise AssertionError("La pista de audio no cubre la duración del capítulo")
     if min(int(vs["width"]),int(vs["height"]))<720:
         raise AssertionError("Resolución inferior a 720p")
     if not abs(duration-expected)<2:

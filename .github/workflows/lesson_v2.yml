@@ -104,7 +104,13 @@ jobs:
           vdur=$(ffprobe -v error -show_entries format=duration -of csv=p=0 build/video.mp4)
           adur=$(ffprobe -v error -show_entries format=duration -of csv=p=0 build/narracion.wav)
           python -c "a=float('$adur');v=float('$vdur');print('Video',v,'Voz',a);assert abs(v-a) < 1.5, 'Desajuste entre capítulos y audio'"
-          ffmpeg -hide_banner -loglevel error -y -i build/video.mp4 -i build/narracion.wav -map 0:v:0 -map 1:a:0 -c:v copy -c:a aac -b:a 192k -ar 48000 -shortest -movflags +faststart build/leccion_v2_voz_grave.mp4
+          # ManimGX optimiza los tramos estáticos sin codificar cada fotograma.
+          # -shortest cortaba ~12 s del audio por el último PTS real del stream visual.
+          # Rellenamos esos últimos segundos con el fotograma final y verificamos ambos streams.
+          ffmpeg -hide_banner -loglevel error -y -i build/video.mp4 -i build/narracion.wav -filter_complex "[0:v]tpad=stop_mode=clone:stop_duration=20,format=yuv420p[v]" -map "[v]" -map 1:a:0 -c:v libx264 -preset ultrafast -crf 19 -fps_mode:v vfr -c:a aac -b:a 192k -ar 48000 -t "$adur" -movflags +faststart build/leccion_v2_voz_grave.mp4
+          vd=$(ffprobe -v error -select_streams v:0 -show_entries stream=duration -of csv=p=0 build/leccion_v2_voz_grave.mp4)
+          ad=$(ffprobe -v error -select_streams a:0 -show_entries stream=duration -of csv=p=0 build/leccion_v2_voz_grave.mp4)
+          python -c "v=float('$vd');a=float('$ad');print('Salida final video=',v,'audio=',a);assert abs(v-a)<0.4, 'Video y voz tienen diferente duración'"
           ffprobe -v error -show_entries format=duration -of csv=p=0 build/leccion_v2_voz_grave.mp4
       - uses: actions/upload-artifact@v4
         with:

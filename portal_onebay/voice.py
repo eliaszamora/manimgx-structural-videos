@@ -5,7 +5,7 @@ import numpy as np
 import soundfile as sf
 from kokoro import KPipeline
 from story import BEATS,TOTAL
-VOICE='em_alex';SAMPLE_RATE=24000;SPEED=.98;LEAD=.55;TAIL=.50
+VOICE='em_alex';SAMPLE_RATE=24000;SPEED=.98;LEAD=.35;TAIL=.35
 def main():
     out=Path('build/portal');out.mkdir(parents=True,exist_ok=True)
     pipe=KPipeline(lang_code='e');parts=[];audit=[]

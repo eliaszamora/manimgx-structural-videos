@@ -1,6 +1,11 @@
 name: Optional Remotion branded end card (individual license)
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/remotion_endcard.yml'
+      - 'studio_v3/remotion/**'
 permissions:
   contents: read
 jobs:

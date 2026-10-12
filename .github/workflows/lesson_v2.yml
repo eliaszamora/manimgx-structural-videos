@@ -112,10 +112,17 @@ jobs:
           ad=$(ffprobe -v error -select_streams a:0 -show_entries stream=duration -of csv=p=0 build/leccion_v2_voz_grave.mp4)
           python -c "v=float('$vd');a=float('$ad');print('Salida final video=',v,'audio=',a);assert abs(v-a)<0.4, 'Video y voz tienen diferente duración'"
           ffprobe -v error -show_entries format=duration -of csv=p=0 build/leccion_v2_voz_grave.mp4
+      - name: Auditoría mecánica, visual y de duración final
+        run: |
+          python -m pip install -q pillow
+          python -m unittest discover -s qa -p 'test_*.py'
+          python qa/video_audit.py build/leccion_v2_voz_grave.mp4 --out build/video_qa --expected 169
       - uses: actions/upload-artifact@v4
         with:
           name: leccion-v2-masculino-grave-FINAL
           path: |
             build/leccion_v2_voz_grave.mp4
             build/report_voz.json
+            build/video_qa/*.jpg
+            build/video_qa/qa_report.json
           if-no-files-found: error

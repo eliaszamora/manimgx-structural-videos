@@ -137,7 +137,7 @@ class PremiumDoubleCurvature(m.Scene):
         base_reference=geometry(0,grid,3)
         blueprints=m.VGroup(*[m.Dot(point=vec(node(i)),radius=.075,color=gold) for i in (1,3)])
         self.chapter(0)
-        self.run(m.FadeIn(supports),m.Create(frame),dt=2.35)
+        self.run(m.FadeIn(supports),m.FadeIn(frame),dt=1.75)
         self.info(3.25,'SISTEMA',['Bases empotradas','Nudos rígidos'])
         a=node(3)
         F=arrow((a[0]-.08,a[1]),(a[0]+1.06,a[1]))
@@ -146,12 +146,13 @@ class PremiumDoubleCurvature(m.Scene):
         self.finish()
 
         self.chapter(1)
-        self.run(m.FadeOut(F),dt=.42)
         self.add(base_reference)
         self.info(2.35,'DEFORMACIÓN',['Carga aplicada 0 → 100 %','Desplazamiento continuo'],sea)
         # With Transform the ORIGINAL MATERIAL POINTS move to their FEM-computed positions.
         self.wait_to(5.65)
-        self.run(m.Transform(frame,geometry(AMP,sea,8)),dt=3.65)
+        b=node(3,AMP)
+        self.run(m.Transform(frame,geometry(AMP,sea,8)),
+                 m.Transform(F,arrow((b[0]-.08,b[1]),(b[0]+1.06,b[1]))),dt=3.65)
         tip=dotted_displacement()
         self.run(m.Create(tip),dt=.72)
         self.info(10.10,'ESCALA VISUAL',[f'Deformada ampliada ×{int(AMP)}','u superior ≈ 2,93 mm'],violet)
@@ -169,7 +170,7 @@ class PremiumDoubleCurvature(m.Scene):
         self.finish()
 
         self.chapter(3)
-        self.run(m.FadeOut(bottom),m.FadeOut(tangent),dt=.55)
+        self.run(m.FadeOut(bottom),m.FadeOut(tangent),m.FadeOut(F),dt=.55)
         self.run(m.Transform(frame,geometry(0,sea,8)),m.FadeOut(base_reference),dt=1.48)
         self.info(2.15,'MOMENTO FLECTOR',['Eje: columna ORIGINAL','Negativo ←  |  + →'],red)
         plot=fixed_sign_diagram('M')
@@ -189,8 +190,8 @@ class PremiumDoubleCurvature(m.Scene):
 
         self.chapter(5)
         self.run(m.FadeOut(vp),dt=.63)
-        self.info(2.0,'PRIMERO LA FÍSICA',['Restricciones y compatibilidad','antes de dibujar curvas'],sea)
+        self.info(2.0,'PRIMERO LA FÍSICA',['Bases fijas y giros','antes de dibujar curvas'],sea)
         self.run(m.Transform(frame,geometry(AMP,sea,8)),dt=2.75)
-        self.info(6.35,'DESPUÉS LOS ESFUERZOS',['Curvatura ↔ momento','Equilibrio ↔ cortante'],gold)
+        self.info(6.35,'LOS ESFUERZOS',['Curvatura ↔ momento','Equilibrio ↔ cortante'],gold)
         self.info(10.0,'IDEA CLAVE',['Comprender el mecanismo','es mejor que memorizar'],violet)
         self.finish()

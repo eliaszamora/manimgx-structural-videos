@@ -102,6 +102,9 @@ class PremiumDoubleCurvature(m.Scene):
             self.run(m.FadeOut(self.head),m.FadeOut(self.sub),m.FadeOut(self.counter),dt=.25)
             self.head,self.sub,self.counter=header,subtitle,count
             self.run(m.FadeIn(header),m.FadeIn(subtitle),m.FadeIn(count),dt=.40)
+        # Remove the previous chapter's final card before introducing the next one.
+        if getattr(self,'details',[]):
+            self.run(m.FadeOut(self.details[-1]),dt=.24)
         self.details=[]
     def info(self,at,heading,lines,accent=sea):
         self.wait_to(at)
@@ -135,7 +138,6 @@ class PremiumDoubleCurvature(m.Scene):
         blueprints=m.VGroup(*[m.Dot(point=vec(node(i)),radius=.075,color=gold) for i in (1,3)])
         self.chapter(0)
         self.run(m.FadeIn(supports),m.Create(frame),dt=2.35)
-        self.info(3.25,'MODELO','Un piso  ·  una crujía' .split('no delimiter'),gold) if False else None
         self.info(3.25,'SISTEMA',['Bases empotradas','Nudos rígidos'])
         a=node(3)
         F=arrow((a[0]-.08,a[1]),(a[0]+1.06,a[1]))

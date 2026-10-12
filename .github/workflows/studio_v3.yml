@@ -1,0 +1,146 @@
+name: Structural Studio V3 - ManimGX Alex Natural QA
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'studio_v3/**'
+      - '.github/workflows/studio_v3.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: structural-studio-v3-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  engineering:
+    name: Dual solver + signs gate (blocking)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install deterministic structural solvers
+        run: python -m pip install 'numpy>=2.4,<3' 'PyniteFEA>=2.2,<4' scipy
+      - name: Validate diagrams, deformations, signs and PyNite
+        run: |
+          python -m unittest discover -s studio_v3/qa -p 'test_*.py' -v
+          python studio_v3/qa/pynite_check.py
+          python -m py_compile studio_v3/demo/*.py studio_v3/structural_viz/*.py
+  render:
+    name: Render authentic ManimGX
+    runs-on: ubuntu-latest
+    needs: engineering
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install GPU software fallback
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg libvulkan1 mesa-vulkan-drivers libegl1 libgl1
+          python -m pip install -q 'numpy>=2,<3' manimgx
+      - name: Render real ManimGX scene
+        run: |
+          set -o pipefail
+          manimgx render studio_v3/demo/scene.py 2>&1 | tee manimgx_studio_v3.log
+          mkdir -p build/studio_v3
+          python - <<'PY'
+          from pathlib import Path
+          import shutil
+          candidates=[p for p in Path('.').rglob('*.mp4') if 'build' not in p.parts]
+          if not candidates:raise RuntimeError('Missing ManimGX video')
+          src=max(candidates,key=lambda p:p.stat().st_mtime)
+          shutil.copy2(src,'build/studio_v3/scene.mp4')
+          print('ManimGX output',src,Path('build/studio_v3/scene.mp4').stat().st_size)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: studio-v3-manim-raw
+          path: |
+            build/studio_v3/scene.mp4
+            manimgx_studio_v3.log
+          if-no-files-found: warn
+  narrator:
+    name: Alex natural phrase sync
+    runs-on: ubuntu-latest
+    needs: engineering
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install open CPU TTS
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq espeak-ng ffmpeg libsndfile1
+          python -m pip install -q 'kokoro>=0.9.4' soundfile
+      - name: Narration positioned sentence by sentence
+        run: |
+          set -o pipefail
+          PYTHONPATH=studio_v3/demo python studio_v3/demo/voice.py 2>&1 | tee studio_v3_voice.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: studio-v3-alex-cue-audio
+          path: |
+            build/studio_v3/alex_natural.wav
+            build/studio_v3/cues.json
+            studio_v3_voice.log
+          if-no-files-found: warn
+  deliver:
+    name: 84-second MP4 + contact sheet
+    runs-on: ubuntu-latest
+    needs: [render,narrator]
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: studio-v3-manim-raw
+          path: collected/
+      - uses: actions/download-artifact@v4
+        with:
+          name: studio-v3-alex-cue-audio
+          path: collected/
+      - name: FFmpeg and image checks
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
+          python -m pip install -q pillow
+      - name: Recover frame clock and synchronize source frames to speech
+        run: |
+          mkdir -p build/studio_v3
+          cp collected/build/studio_v3/scene.mp4 build/studio_v3/scene.mp4
+          cp collected/build/studio_v3/alex_natural.wav build/studio_v3/alex_natural.wav
+          cp collected/build/studio_v3/cues.json build/studio_v3/cues.json
+          python - <<'PY'
+          import json,subprocess,pathlib
+          def p(f,items):return json.loads(subprocess.check_output(['ffprobe','-v','error','-show_entries',items,'-of','json',f],text=True))
+          count=int(p('build/studio_v3/scene.mp4','stream=nb_frames')['streams'][0]['nb_frames'])
+          duration=float(p('build/studio_v3/alex_natural.wav','format=duration')['format']['duration'])
+          assert count>300 and abs(duration-84)<.01,(count,duration)
+          rate=count/duration
+          pathlib.Path('build/studio_v3/clock.env').write_text(f'RATE={rate:.9f}\nDURATION={duration:.4f}\n')
+          print('Frames:',count,'Duration:',duration,'rate:',rate)
+          PY
+          source build/studio_v3/clock.env
+          ffmpeg -hide_banner -loglevel error -y -i build/studio_v3/scene.mp4 -i build/studio_v3/alex_natural.wav -filter_complex "[0:v]setpts=N/(${RATE}*TB),fps=30,format=yuv420p[v]" -map '[v]' -map 1:a:0 -c:v libx264 -crf 20 -preset veryfast -c:a aac -b:a 192k -t "${DURATION}" -movflags +faststart build/studio_v3/Doble_Curvatura_Studio_V3_Alex_Natural.mp4
+      - name: Audit rendered MP4 incl mobile frames
+        run: |
+          python studio_v3/qa/video_check.py build/studio_v3/Doble_Curvatura_Studio_V3_Alex_Natural.mp4 --output build/studio_v3/qa --duration 84
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: STUDIO-V3-ALEX-NATURAL-FINAL
+          path: |
+            build/studio_v3/Doble_Curvatura_Studio_V3_Alex_Natural.mp4
+            build/studio_v3/cues.json
+            build/studio_v3/qa/*.jpg
+            build/studio_v3/qa/report.json
+          if-no-files-found: warn

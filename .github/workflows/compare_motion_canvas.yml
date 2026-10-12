@@ -1,0 +1,33 @@
+name: Motion Canvas alternate engine - compile probe
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'studio_v3/motion_canvas/**'
+      - '.github/workflows/compare_motion_canvas.yml'
+permissions:
+  contents: read
+jobs:
+  compile:
+    name: Compile Motion Canvas vector scene
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Resolve Motion Canvas open-source dependencies
+        run: cd studio_v3/motion_canvas && npm install --no-audit --no-fund
+      - name: Build comparison project (does not claim MP4 export)
+        run: |
+          cd studio_v3/motion_canvas
+          npm run build
+          ls -lah dist
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: motion-canvas-editor-prototype
+          path: studio_v3/motion_canvas/dist/
+          if-no-files-found: warn

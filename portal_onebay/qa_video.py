@@ -18,7 +18,7 @@ def main():
     assert v['width']>=1280 and v['height']>=720
     frames=[];quality=[];elapsed=0
     for b in BEATS:
-        time=elapsed+int(b['seconds']*.64)
+        time=elapsed+int(b['seconds']*.46)
         out=dest/f"chapter_{b['id']}.jpg"
         check(['ffmpeg','-hide_banner','-loglevel','error','-y','-ss',str(time),'-i',str(path),'-frames:v','1','-vf','scale=780:-2',str(out)])
         im=Image.open(out).convert('RGB')

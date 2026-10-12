@@ -9,7 +9,7 @@ import numpy as np
 GRAVITY=solve('gravity');LATERAL=solve('lateral')
 BG='#071523';WHITE='#F4F7FF';MUTED='#A3B8CA';STEEL='#466076'
 TEAL='#42E2C2';CORAL='#FF9881';BLUE='#87ADFF';GOLD='#FFD58B'
-X0=-3.60;BASE=-1.75;SCALE=1.26;GAIN=170
+X0=-3.42;BASE=-2.03;SCALE=1.16;GAIN=170
 
 def pos(xy):return [X0+SCALE*xy[0],BASE+SCALE*xy[1],0]
 def text(s,y=-3.42,x=0,size=23,color=WHITE):
@@ -70,8 +70,8 @@ class PortalEngineeringLesson(m.Scene):
     def chapter(self,i):
         self.elapsed=0
         b=BEATS[i];self.limit=b['seconds']
-        title=text(b['id']+'  /  '+b['heading'],y=3.24,size=31)
-        foot=text(b['subtitle'],y=-3.35,size=22)
+        title=text(b['id']+'  /  '+b['heading'],y=3.24,size=35)
+        foot=text(b['subtitle'],y=-3.35,size=28)
         if i==0:
             self.title=title;self.foot=foot
             self.animate(m.FadeIn(self.title),m.FadeIn(self.foot),t=1.2)
@@ -101,8 +101,8 @@ class PortalEngineeringLesson(m.Scene):
 
         self.chapter(1)
         p=pos([L/2,H])
-        down=m.Arrow([p[0],3.02,0],[p[0],p[1]+.13,0],buff=0,color=CORAL,stroke_width=7)
-        load_label=text('35 kN',x=p[0]+.68,y=2.50,size=24,color=CORAL)
+        down=m.Arrow([p[0],2.67,0],[p[0],p[1]+.13,0],buff=0,color=CORAL,stroke_width=7)
+        load_label=text('35 kN',x=p[0]+.68,y=2.43,size=25,color=CORAL)
         self.animate(m.GrowArrow(down),m.FadeIn(load_label),t=2.4)
         caption=text('Simetría: no hay desplazamiento lateral global',y=-2.62,size=22,color=GOLD)
         self.animate(m.FadeIn(caption),t=1.2)
@@ -131,15 +131,12 @@ class PortalEngineeringLesson(m.Scene):
 
         self.chapter(3)
         axis,curves=beam_moment(GRAVITY)
-        self.animate(m.Create(axis),m.Create(curves),t=3.8)
-        meaning=text('M negativo en nudos  /  M positivo al centro',y=-1.98,size=23,color=CORAL)
-        self.animate(m.FadeIn(meaning),t=1.1)
-        signs=m.VGroup(text('−',x=-3.3,y=-2.12,size=31,color=CORAL),
-                       text('+',x=-.05,y=-3.05,size=31,color=GOLD),
-                       text('−',x=3.3,y=-2.12,size=31,color=CORAL))
-        self.animate(m.FadeIn(signs),t=1.2)
+        self.animate(m.Create(axis),m.Create(curves),t=4.3)
+        signs=m.VGroup(text('M positivo: bajo',x=4.65,y=-2.10,size=22,color=GOLD),
+                       text('M negativo: sobre',x=4.65,y=-2.56,size=22,color=CORAL))
+        self.animate(m.FadeIn(signs),t=1.4)
         self.pause(2)
-        self.animate(m.FadeOut(axis),m.FadeOut(curves),m.FadeOut(signs),m.FadeOut(meaning),t=1.6)
+        self.animate(m.FadeOut(axis),m.FadeOut(curves),m.FadeOut(signs),t=1.6)
         self.finish()
 
         self.chapter(4)

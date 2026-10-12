@@ -1,0 +1,131 @@
+name: Portal 2D - ManimGX + Alex natural
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'portal_onebay/**'
+      - '.github/workflows/portal_2d.yml'
+permissions:
+  contents: read
+jobs:
+  engineering:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    name: Structural mechanics + independent anaStruct
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Structural dependencies
+        run: python -m pip install 'numpy>=1.26,<3' 'anastruct>=1.5,<2'
+      - name: Validate equilibrium, symmetry, sway and FEM
+        run: |
+          python -m py_compile portal_onebay/*.py
+          (cd portal_onebay && python mechanics.py && python verify_anastruct.py)
+  visual:
+    name: Render actual ManimGX
+    needs: engineering
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Graphics software
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg libvulkan1 mesa-vulkan-drivers libegl1 libgl1
+          python -m pip install 'numpy>=2,<3' manimgx
+      - name: Render
+        run: |
+          set -o pipefail
+          manimgx render portal_onebay/scene.py 2>&1 | tee portal_render.log
+          mkdir -p build/portal
+          python - <<'PY'
+          from pathlib import Path
+          import shutil
+          mp4=[p for p in Path('.').rglob('*.mp4') if 'build' not in p.parts]
+          if not mp4:raise SystemExit('ManimGX did not produce MP4')
+          src=max(mp4,key=lambda p:p.stat().st_mtime)
+          shutil.copyfile(src,'build/portal/scene.mp4')
+          print('Video file',src)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: portal-manim-gx
+          path: |
+            build/portal/scene.mp4
+            portal_render.log
+          if-no-files-found: warn
+  narrator:
+    name: Kokoro Alex natural - no pitch manipulation
+    needs: engineering
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Neural voice dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq espeak-ng ffmpeg libsndfile1
+          python -m pip install 'kokoro>=0.9.4' soundfile
+      - name: Chapter narration
+        run: |
+          set -o pipefail
+          PYTHONPATH=portal_onebay python portal_onebay/voice.py 2>&1 | tee portal_voice.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: portal-alex-natural
+          path: |
+            build/portal/alex_natural.wav
+            build/portal/voice_report.json
+            portal_voice.log
+          if-no-files-found: warn
+  export:
+    name: Final MP4 and chapter-by-chapter QA
+    needs: [visual,narrator]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: portal-manim-gx
+          path: collected
+      - uses: actions/download-artifact@v4
+        with:
+          name: portal-alex-natural
+          path: collected
+      - name: Install encoding and inspection tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
+          python -m pip install pillow
+      - name: Mix without freezing last frame
+        run: |
+          mkdir -p build/portal
+          find collected -maxdepth 4 -type f -print
+          cp collected/build/portal/scene.mp4 build/portal/scene.mp4
+          cp collected/build/portal/alex_natural.wav build/portal/alex_natural.wav
+          cp collected/build/portal/voice_report.json build/portal/voice_report.json
+          ffmpeg -hide_banner -loglevel error -y -i build/portal/scene.mp4 -i build/portal/alex_natural.wav -map 0:v:0 -map 1:a:0 -c:v copy -c:a aac -b:a 192k -shortest -movflags +faststart build/portal/Portal_Vertical_Horizontal_Alex_Natural.mp4
+      - name: Audit video frames, audio tracks and length
+        run: PYTHONPATH=portal_onebay python portal_onebay/qa_video.py build/portal/Portal_Vertical_Horizontal_Alex_Natural.mp4 --output build/portal/qa
+      - uses: actions/upload-artifact@v4
+        with:
+          name: portal-vertical-horizontal-VIDEO-FINAL
+          path: |
+            build/portal/Portal_Vertical_Horizontal_Alex_Natural.mp4
+            build/portal/voice_report.json
+            build/portal/qa/contact_sheet.jpg
+            build/portal/qa/report.json
+            build/portal/qa/mobile_*.jpg
+          if-no-files-found: error

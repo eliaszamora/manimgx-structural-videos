@@ -21,7 +21,7 @@ def members(case="lateral"):
         output.append(dict(name=label,nodes=e["nodes"],length=e["length"],
                       N=round(float(n),6),V=round(float(vi),6),
                       M0=round(float(m0),6),M1=round(float(m1),6),
-                      zero_M=(-m0*e["length"]/vi if abs(vi)>1e-9 and 0<=-m0/vi<=e["length"] else None)))
+                      zero_M=(-m0/vi if abs(vi)>1e-9 and 0<=-m0/vi<=e["length"] else None)))
     return output
 def check():
     r=solve("lateral");data=members()

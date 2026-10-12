@@ -224,6 +224,5 @@ class FullFrameV6(m.Scene):
         self.pause_to(6.2)
         self.animate(m.FadeOut(M),m.FadeIn(plot_all("V")),duration=.7)
         self.pause_to(8.85)
-        self.animate(m.FadeOut(*[]),duration=.05) if False else None
         self.note("Equilibrio + compatibilidad + signos locales")
         self.finish()

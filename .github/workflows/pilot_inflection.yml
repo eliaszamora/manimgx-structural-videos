@@ -1,0 +1,101 @@
+name: Pilot V7 - Inflection visual-first 32s
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'pilot_inflection/**'
+      - '.github/workflows/pilot_inflection.yml'
+permissions:
+  contents: read
+concurrency:
+  group: visual-pilot-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  mechanics:
+    name: Validate FEM and visual geometry
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Numerical geometry and curvature verification
+        run: |
+          python -m pip install -q 'numpy>=2,<3'
+          python -m unittest discover -s pilot_inflection -p 'test_*.py' -v
+          python pilot_inflection/geometry.py
+  manimgx:
+    name: Render visual silent pilot
+    needs: mechanics
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: CPU graphics and ManimGX
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg libvulkan1 mesa-vulkan-drivers libegl1 libgl1
+          python -m pip install -q 'numpy>=2,<3' manimgx
+      - name: Render material-point animation
+        run: |
+          set -o pipefail
+          manimgx render pilot_inflection/scene_manim.py 2>&1 | tee pilot_render.log
+          mkdir -p build/pilot
+          python - <<'PY'
+          from pathlib import Path
+          import shutil
+          options=[p for p in Path('.').rglob('*.mp4') if 'build' not in p.parts]
+          assert options, 'No ManimGX MP4 found'
+          src=max(options,key=lambda p:p.stat().st_mtime)
+          shutil.copy2(src,'build/pilot/scene_original.mp4')
+          print('Rendered',src)
+          PY
+          ffprobe -v error -show_entries stream=width,height,avg_frame_rate,duration,nb_frames:format=duration -of json build/pilot/scene_original.mp4
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: visual-pilot-manimgx-raw
+          path: |
+            build/pilot/scene_original.mp4
+            pilot_render.log
+          if-no-files-found: warn
+  qa:
+    name: Visual QA and downloadable MP4
+    needs: manimgx
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: visual-pilot-manimgx-raw
+          path: retrieved
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install FFmpeg and review image tooling
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
+          python -m pip install -q Pillow
+      - name: Quality audit and contact sheets
+        run: |
+          mkdir -p build/pilot
+          cp retrieved/build/pilot/scene_original.mp4 build/pilot/scene_original.mp4
+          python pilot_inflection/video_qa.py build/pilot/scene_original.mp4 build/pilot
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: PILOT-V7-INFLECTION-MANIMGX
+          path: |
+            build/pilot/Inflection_Visual_Pilot_V7.mp4
+            build/pilot/qa_contact.jpg
+            build/pilot/qa_report.json
+            build/pilot/frame_*.jpg
+            retrieved/pilot_render.log
+          if-no-files-found: warn

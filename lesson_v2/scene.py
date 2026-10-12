@@ -11,7 +11,7 @@ C = {"bg":"#081321","white":"#F3F7FE","muted":"#A9BBCF",
 LEFT, RIGHT, Y, SPAN = -5.05, 3.25, 0.63, 8.30
 
 def txt(value, x=0, y=0, size=24, color=None):
-    return m.Text(value,font_size=size,color=color or C["white"]).move_to([x,y,0])
+    return m.Text(value,font_size=size,font="Noto Sans",color=color or C["white"]).move_to([x,y,0])
 
 def coord(u, scale=0):
     return [LEFT + SPAN*u, Y-1.18*scale*u*u*(3-u)/2, 0]
@@ -64,7 +64,7 @@ class LeccionVoladizoV2(m.Scene):
         beam=line(coord(0),coord(1),C["teal"],8)
         load=m.Arrow([RIGHT,2.1,0],[RIGHT,.70,0],buff=0,color=C["coral"],stroke_width=7)
         loadtxt=txt("P",RIGHT+.43,1.65,28,C["coral"])
-        start=txt("EMPOTRAMIENTO",LEFT+1.15,-.02,18,C["muted"])
+        start=txt("EMPOTRAMIENTO",LEFT+1.80,-.15,18,C["muted"])
         tip=txt("EXTREMO LIBRE",RIGHT-.35,-.02,18,C["muted"])
 
         self.chapter(0)
@@ -157,7 +157,7 @@ class LeccionVoladizoV2(m.Scene):
         vs=line([LEFT,vbase,0],[RIGHT,vbase,0],C["muted"],3)
         va=m.Polygon([LEFT,vbase,0],[LEFT,vbase+.47,0],[RIGHT,vbase+.47,0],[RIGHT,vbase,0],
                      color=C["blue"],fill_color=C["blue"],fill_opacity=.22,stroke_width=3)
-        vname=txt("V(x) = +P",.05,-2.46,25,C["blue"])
+        vname=txt("V(x) = +P",4.36,-2.47,24,C["blue"])
         self.run(m.Create(vs),m.Create(va),seconds=3.3)
         self.run(m.FadeIn(vname),seconds=1.3)
         relation=txt("dM / dx = V = + P",0,.02,26,C["gold"])
@@ -165,7 +165,7 @@ class LeccionVoladizoV2(m.Scene):
         self.finish()
 
         self.chapter(7)
-        recap=txt("RESTRICCIONES    →    CURVATURA    →    M    →    V",0,1.85,24,C["gold"])
+        recap=txt("RESTRICCIONES  →  CURVATURA",-1.50,1.75,21,C["gold"])
         self.run(m.FadeOut(relation),m.FadeIn(recap),seconds=2.0)
         final=txt("Comprender el equilibrio evita memorizar dibujos.",0,-.29,25,C["teal"])
         self.run(m.FadeIn(final),seconds=2.0)

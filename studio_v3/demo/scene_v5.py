@@ -185,7 +185,7 @@ class V5CleanPortal(m.Scene):
         V=diagram("V")
         self.play_t(m.Create(V),seconds=1.85)
         self.until(9.85)
-        self.mark("V local = +11,99 kN · equilibrado por las reacciones",C["cut"])
+        self.mark("V local = +11,99 kN",C["cut"])
         self.end_chapter()
 
         self.chapter(5,"DEFORMADA Y ESFUERZOS")

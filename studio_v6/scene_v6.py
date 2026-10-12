@@ -76,13 +76,7 @@ def plot_all(kind):
             group.add(m.Polygon(vv(a),vv(aa),vv(bb),vv(b),
                     color=color,fill_color=color,fill_opacity=.23,stroke_width=2))
             group.add(line(aa,bb,color,4))
-            if abs(va)+abs(vb)>reference*.10 and tb-ta>.13:
-                t=(ta+tb)/2
-                base=p(t)
-                centroid=(base[0]+nx*.52*(fac((va+vb)/2)),
-                          base[1]+ny*.52*(fac((va+vb)/2)))
-                sym=text("+" if positive else "−",centroid[0],centroid[1],24,color)
-                group.add(sym)
+
         if kind=="M":
             for t in e.zeros("M"):
                 if 0<t<1:
@@ -189,30 +183,30 @@ class FullFrameV6(m.Scene):
         self.finish()
 
         self.intro(4,"M: TODOS LOS ELEMENTOS")
-        self.animate(m.FadeOut(reactions),m.FadeOut(force),duration=.55)
+        self.animate(m.FadeOut(reactions),m.FadeOut(force),m.FadeOut(headings),duration=.55)
         M=plot_all("M")
         self.animate(m.FadeIn(M),duration=1.65)
-        self.note("M: + dorado (normal horaria) · − coral")
+        self.note("M: + dorado, − coral · columnas C1 y C2: − → +")
         self.pause_to(9.3)
-        self.note("C1, V1, V2 y C2 · puntos violeta: M = 0")
+        self.note("Viga: V1 + → 0; V2 0 → − · violeta: M = 0")
         self.finish()
 
         self.intro(5,"V: TODOS LOS ELEMENTOS")
         self.animate(m.FadeOut(M),duration=.48)
         V=plot_all("V")
         self.animate(m.FadeIn(V),duration=1.65)
-        self.note("Cortante + azul · − violeta · ejes locales")
+        self.note("V: C1 +11,99 · V1/V2 −6,09 · C2 +12,01 kN")
         self.pause_to(9.3)
-        self.note("Sin cargas distribuidas: V constante por tramo")
+        self.note("Cortante local: + azul · − violeta · constante")
         self.finish()
 
         self.intro(6,"N: TRACCIÓN Y COMPRESIÓN")
         self.animate(m.FadeOut(V),duration=.48)
         N=plot_all("N")
         self.animate(m.FadeIn(N),duration=1.65)
-        self.note("N positivo = tracción · negativo = compresión")
+        self.note("N: C1 +6,09 · V1/V2 +11,99 · C2 −6,09 kN")
         self.pause_to(9.3)
-        self.note("También en axial: cuatro tramos y cuatro signos")
+        self.note("N + = tracción · N − = compresión")
         self.finish()
 
         self.intro(7,"TRES DIAGRAMAS · UN SOLO PÓRTICO")

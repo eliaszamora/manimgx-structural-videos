@@ -38,7 +38,11 @@ class ColumnaDoubleCurvature(m.Scene):
         if idx==0:
             self.header=header;self.subtitle=sub
             self.show(m.FadeIn(header),m.FadeIn(sub),secs=.60)
-        else:self.show(m.Transform(self.header,header),m.Transform(self.subtitle,sub),secs=.60)
+        else:
+            # Transition complete labels, not glyph-by-glyph morphs (prevents garbled headers).
+            self.show(m.FadeOut(self.header),m.FadeOut(self.subtitle),secs=.20)
+            self.header=header; self.subtitle=sub
+            self.show(m.FadeIn(self.header),m.FadeIn(self.subtitle),secs=.40)
     def finish(self):
         if self.chapter_elapsed>SECONDS_PER_BEAT+.01:raise ValueError('chapter overrun')
         self.wait_until(SECONDS_PER_BEAT)
@@ -84,6 +88,9 @@ class ColumnaDoubleCurvature(m.Scene):
         foot=world((0,0))
         tangent_bottom=segment((foot[0],foot[1]-.43),(foot[0],foot[1]+.43),S.moment_positive,5)
         self.show(m.Create(tangent_bottom),secs=1.)
+        self.wait_until(4.25)
+        base_focus=m.Dot(point=[*foot,0],radius=.13,color=S.moment_positive)
+        self.show(m.FadeIn(base_focus),secs=.70)
         self.wait_until(6.55)
         top=joint(1,True);theta=AMP*result['u'][1][2]
         tangent_top=segment((top[0]+.43*math.sin(theta),top[1]-.43*math.cos(theta)),
@@ -97,7 +104,7 @@ class ColumnaDoubleCurvature(m.Scene):
         self.finish()
 
         self.begin(3)
-        self.show(m.FadeOut(tangent_bottom),m.FadeOut(tangent_top),m.FadeOut(explain),m.FadeOut(note),secs=.65)
+        self.show(m.FadeOut(tangent_bottom),m.FadeOut(tangent_top),m.FadeOut(base_focus),m.FadeOut(explain),m.FadeOut(note),secs=.65)
         panelheading=label('MOMENTO LOCAL · C1',3.62,2.26,24,S.ink)
         self.show(m.Transform(header2,panelheading) if header2 in self.mobjects else m.FadeIn(panelheading),secs=.6)
         self.wait_until(2.0)
@@ -128,10 +135,15 @@ class ColumnaDoubleCurvature(m.Scene):
         self.wait_until(10.5)
         sumv=label('11,99 + 12,01 = 24 kN',3.48,.10,26,S.ink)
         self.show(m.FadeOut(shearplot),m.FadeIn(sumv),secs=.6)
+        # A second reaction appears when describing the sum of BOTH base shears.
+        otherfoot=world((L,0))
+        other_reaction=arr((otherfoot[0]+.62,otherfoot[1]+.30),
+                           (otherfoot[0]-.30,otherfoot[1]+.30),S.load)
+        self.show(m.GrowArrow(other_reaction),secs=.90)
         self.finish()
 
         self.begin(5)
-        self.show(m.FadeOut(shearplot),m.FadeOut(value),m.FadeOut(reaction),m.FadeOut(msg),m.FadeOut(sumv),secs=.75)
+        self.show(m.FadeOut(shearplot),m.FadeOut(value),m.FadeOut(reaction),m.FadeOut(other_reaction),m.FadeOut(msg),m.FadeOut(sumv),secs=.75)
         self.wait_until(2.8)
         recap=label('RESTRICCIONES → GIROS',3.55,.82,25,S.moment_positive)
         self.show(m.FadeIn(recap),secs=.8)

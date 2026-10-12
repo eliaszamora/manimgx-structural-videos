@@ -116,7 +116,25 @@ jobs:
           cp collected/build/portal/scene.mp4 build/portal/scene.mp4
           cp collected/build/portal/alex_natural.wav build/portal/alex_natural.wav
           cp collected/build/portal/voice_report.json build/portal/voice_report.json
-          ffmpeg -hide_banner -loglevel error -y -i build/portal/scene.mp4 -i build/portal/alex_natural.wav -map 0:v:0 -map 1:a:0 -c:v copy -c:a aac -b:a 192k -shortest -movflags +faststart build/portal/Portal_Vertical_Horizontal_Alex_Natural.mp4
+          # ManimGX currently reports 135s in metadata but may give non-linear H264 presentation timestamps.
+          # Reconstruct the video clock from actual decoded frame count and the narration duration,
+          # rather than copying malformed source timestamps and losing ~6s during mux.
+          python - <<'PY'
+          import json, subprocess
+          from pathlib import Path
+          def probe(file,field):
+              raw=subprocess.check_output(["ffprobe","-v","error","-show_entries",field,"-of","json",file],text=True)
+              return json.loads(raw)
+          v=probe("build/portal/scene.mp4","stream=nb_frames")["streams"][0]
+          count=int(v["nb_frames"])
+          duration=float(probe("build/portal/alex_natural.wav","format=duration")["format"]["duration"])
+          assert count>500 and duration>60
+          Path("build/portal/retime.env").write_text(f"RATE={count/duration:.9f}\\nDURATION={duration:.6f}\\n")
+          print("Input frames",count,"voice seconds",duration,"normalized source fps",count/duration)
+          PY
+          source build/portal/retime.env
+          ffmpeg -hide_banner -loglevel error -y -i build/portal/scene.mp4 -i build/portal/alex_natural.wav -filter_complex "[0:v]setpts=N/(${RATE}*TB),fps=30,format=yuv420p[v]" -map "[v]" -map 1:a:0 -c:v libx264 -preset veryfast -crf 20 -c:a aac -b:a 160k -t "${DURATION}" -movflags +faststart build/portal/Portal_Vertical_Horizontal_Alex_Natural.mp4
+          ffprobe -v error -show_entries format=duration:stream=codec_type,duration -of json build/portal/Portal_Vertical_Horizontal_Alex_Natural.mp4
       - name: Audit video frames, audio tracks and length
         run: PYTHONPATH=portal_onebay python portal_onebay/qa_video.py build/portal/Portal_Vertical_Horizontal_Alex_Natural.mp4 --output build/portal/qa
       - uses: actions/upload-artifact@v4

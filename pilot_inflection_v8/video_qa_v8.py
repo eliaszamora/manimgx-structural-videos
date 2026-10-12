@@ -11,7 +11,7 @@ def probe(p):
     "-of","json",str(p)]).stdout)
 def extract(video,t,path):
     cmd(["ffmpeg","-hide_banner","-loglevel","error","-y","-ss",str(t),
-         "-i",str(video),"-frames:v","1","-vf","scale=640:-2",str(path)])
+         "-i",str(video),"-frames:v","1","-vf","scale=640:-2", "-c:v","png", str(path)])
     return Image.open(path).convert("RGB")
 def main():
     video=Path(sys.argv[1]);out=Path(sys.argv[2]);out.mkdir(parents=True,exist_ok=True)
@@ -21,11 +21,11 @@ def main():
     # Source has no sound by pedagogical design.
     assert 19<duration<35,("Unexpected actual picture duration",duration)
     assert int(track["width"])>=1280 and int(track["height"])>=720
-    times=[.7,2.2,3.6,4.7,5.6,7.2,8.4,10.0,12.0,13.8,15.7,17.8,19.1,21.3,23.8]
+    times=[.7,2.2,3.6,4.7,5.6,7.2,8.4,10.0,12.0,13.8,15.7,17.8,19.1,21.3,22.8]
     times=[t for t in times if t<duration-.2]
     imgs=[];stats=[];tiles=[]
     for i,t in enumerate(times):
-        path=out/f"frame_{i:02d}.jpg"
+        path=out/f"frame_{i:02d}.png"
         img=extract(video,t,path)
         std=ImageStat.Stat(img.convert("L")).stddev[0]
         stats.append({"time":t,"contrast_sd":round(std,2)})

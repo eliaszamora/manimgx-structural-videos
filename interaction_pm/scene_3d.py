@@ -198,13 +198,13 @@ class FlexocompresionTresDimensiones(m.ThreeDScene):
         sec=m.always_redraw(lambda: section_overlay(c.get_value()))
         strain=m.always_redraw(lambda: strain_overlay(c.get_value()))
         micro=m.VGroup(
-           txt("c",.50,1.6,27,GOLD),
-           txt("ε",5.65,1.55,27,GOLD),
+           txt("c",.50,1.6,35,GOLD),
+           txt("ε",5.65,1.55,35,GOLD),
         )
-        formula=txt(EQ[0],2.8,-2.73,35,WHITE)
+        formula=txt(EQ[0],2.8,-2.73,46,WHITE)
         self.add_fixed_in_frame_mobjects(sec,strain,micro,formula)
         self.add_fixed_in_frame_mobjects(
-           txt("0,003",5.35,2.0,20,COMPRESS))
+           txt("0,003",5.35,2.0,27,COMPRESS))
         # The graph will be swapped in AFTER the strain/mechanics has been understood.
         gx=m.VGroup()
         for P in (0,1000,2000,3000,4000):
@@ -234,7 +234,7 @@ class FlexocompresionTresDimensiones(m.ThreeDScene):
             spent=3.0 if i==0 else 0.0
             if i:
                 eq=txt(EQ[i],2.8,-2.73,
-                       28 if len(EQ[i])>41 else 33,WHITE)
+                       30 if len(EQ[i])>41 else 44,WHITE)
                 self.play(m.Transform(formula,eq),run_time=1.4)
                 spent+=1.4
             if i==1:

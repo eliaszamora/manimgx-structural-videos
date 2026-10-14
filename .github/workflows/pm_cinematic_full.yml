@@ -5,6 +5,8 @@ on:
     branches: [video/pm-3d-cinematic]
     paths:
       - .github/workflows/pm_cinematic_full.yml
+      - interaction_pm/scene_cinematic.py
+      - interaction_pm/qa_cinematic.py
 permissions:
   contents: read
 jobs:

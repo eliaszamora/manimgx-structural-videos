@@ -1,0 +1,61 @@
+name: Lección 3D completa P-M - sin títulos
+on:
+  workflow_dispatch:
+  push:
+    branches: [lesson/interaccion-pm-3d-visual]
+    paths:
+      - ".github/workflows/interaction_pm_3d.yml"
+permissions:
+  contents: read
+jobs:
+  video:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Dependencias ManimGX genuino en CPU
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg libvulkan1 mesa-vulkan-drivers libegl1 libgl1 fonts-noto-core
+          python -m pip install -q manimgx numpy pillow
+      - name: Compilación y modelo independiente
+        run: |
+          python -m py_compile interaction_pm/model.py interaction_pm/story.py interaction_pm/scene_3d.py
+          python -m unittest discover -s interaction_pm -p "test_*.py" -v
+          python - <<'PY'
+          from interaction_pm.story import BEATS,TOTAL_SECONDS
+          assert len(BEATS)==21 and TOTAL_SECONDS>1000
+          print('Expected',len(BEATS),'chapters in',TOTAL_SECONDS,'seconds')
+          PY
+      - name: Render ManimGX 3D 720p30
+        env:
+          PM_3D_PREVIEW: "0"
+        run: |
+          set -o pipefail
+          mkdir -p build/pm_3d
+          manimgx render interaction_pm/scene_3d.py -o build/pm_3d/silent_full.mp4 -r 1280x720 --fps 30 --preset ultrafast --crf 20 2>&1 | tee build/pm_3d/render.log
+      - name: Verificar duración y tomar muestras
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import subprocess
+          from interaction_pm.story import TOTAL_SECONDS
+          f=Path('build/pm_3d/silent_full.mp4')
+          assert f.exists() and f.stat().st_size>100000
+          seconds=float(subprocess.check_output(['ffprobe','-v','error','-show_entries','format=duration','-of','csv=p=0',str(f)]).decode().strip())
+          print('Silent 3D MP4 duration',seconds,'expected',TOTAL_SECONDS)
+          assert abs(seconds-TOTAL_SECONDS)<1.5
+          PY
+          for t in 10 135 310 520 720 955 1090; do ffmpeg -hide_banner -loglevel error -y -ss "$t" -i build/pm_3d/silent_full.mp4 -frames:v 1 build/pm_3d/frame_$t.jpg; done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: PM-3D-21caps-sin-audio
+          path: |
+            build/pm_3d/silent_full.mp4
+            build/pm_3d/frame_*.jpg
+            build/pm_3d/render.log
+          if-no-files-found: warn

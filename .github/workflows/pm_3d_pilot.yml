@@ -23,7 +23,7 @@ jobs:
       - name: Render piloto tridimensional
         run: |
           python -m py_compile interaction_pm/scene_3d_pilot.py
-          manimgx render interaction_pm/scene_3d_pilot.py 2>&1 | tee manimgx3d.log
+          manimgx render interaction_pm/scene_3d_pilot.py -r 1280x720 --fps 24 --preset ultrafast --crf 20 2>&1 | tee manimgx3d.log
           mkdir -p out
           python - <<'PY'
           from pathlib import Path

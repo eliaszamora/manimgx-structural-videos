@@ -166,17 +166,33 @@ def volume_geometry():
 
 class PeliculaInteraccionPM(m.ThreeDScene):
     def show(self,*obj):
-        self.add_fixed_in_frame_mobjects(*obj)
+        # Deferred registration: never flash explanatory objects before their beat.
+        if not hasattr(self,"_fixed_pending"):
+            self._fixed_pending={}
+            self._fixed_registered=set()
+        for item in obj:self._fixed_pending[id(item)]=item
         return obj
     def play_for(self,i,ops):
-        """Consume voice beat exactly; safe against overrun."""
-        elapsed=0
+        """Use narration slot exactly; no unintended static holds."""
+        total=sum(seconds for seconds,_ in ops)
+        dur=BEATS[i]["duration"]
+        if total>dur:raise ValueError(f"Beat {i+1}: animation overrun")
+        factor=(dur-.5)/total
+        elapsed=0.
         for seconds,anims in ops:
-            if anims is None:self.wait(seconds)
-            else:self.play(*anims,run_time=seconds)
+            seconds*=factor
+            if anims is None:
+                self.wait(seconds)
+            else:
+                for animation in anims:
+                    ob=getattr(animation,"mobject",None)
+                    if ob is not None and id(ob) in getattr(self,"_fixed_pending",{}) and id(ob) not in self._fixed_registered:
+                        self.add_fixed_in_frame_mobjects(ob)
+                        self._fixed_registered.add(id(ob))
+                self.play(*anims,run_time=seconds)
             elapsed+=seconds
-        remaining=BEATS[i]["duration"]-elapsed
-        if remaining < -0.3:raise ValueError(f"Beat {i+1} exceeds narration: {elapsed}")
+        remaining=dur-elapsed
+        if remaining < -.01:raise ValueError(f"Beat {i+1}: clock mismatch")
         if remaining>0:self.wait(remaining)
     def construct(self):
         self.camera.background_color=BG
@@ -195,19 +211,19 @@ class PeliculaInteraccionPM(m.ThreeDScene):
         centroid=txt("P",1.8,1.90,29,COMP)
         moment=txt("M = P · e",2.36,-2.32,34,AXIS)
         sec=animate_section(220,center=(1.45,0),w=3.1)
-        self.show(detail,centroid);detail.set_opacity(0);centroid.set_opacity(0)
+        self.show(detail,centroid);
         self.play_for(0,[
             (5,[m.FadeIn(solid)]),(7,[m.FadeIn(bars)]),
             (5,[m.FadeIn(ties)]),(5,[m.FadeIn(load)]),
             (5,[m.FadeIn(centroid)]),
             (14,[m.FadeIn(detail)]),(5,None)])
-        self.show(moment);moment.set_opacity(0)
+        self.show(moment)
         self.play_for(1,[
             (6,[load.animate.shift(.5*m.UP)]),
             (8,[m.FadeIn(moment)]),
             (9,[m.FadeOut(detail)]),
             (10,[m.FadeOut(centroid)]),(10,[m.FadeIn(detail)])])
-        self.show(sec);sec.set_opacity(0)
+        self.show(sec);
         self.play_for(2,[
             (8,[m.FadeIn(sec)]),(12,[m.FadeOut(moment)]),
             (12,[m.FadeOut(sec)]),(10,[m.FadeIn(sec)])])
@@ -229,8 +245,8 @@ class PeliculaInteraccionPM(m.ThreeDScene):
         force_note=txt("Cc = 0,85 f'c · b · a",.45,-2.55,31,COMP)
         bar_note=txt("− hormigón desplazado por el acero",.55,-2.57,27,SOFT)
         self.show(sec,strain,law,blocknote,epsnote,force_note,bar_note)
-        law.set_opacity(0);blocknote.set_opacity(0);epsnote.set_opacity(0)
-        force_note.set_opacity(0);bar_note.set_opacity(0)
+        
+        
         self.play_for(4,[
             (8,[m.FadeIn(sec)]),(14,[m.FadeIn(strain)]),
             (17,[c.animate.set_value(240)]),(7,[c.animate.set_value(290)])])
@@ -267,7 +283,7 @@ class PeliculaInteraccionPM(m.ThreeDScene):
         Mnote=txt("Mn = Σ Fi · zi",.85,-2.55,35,AXIS)
         bal=txt("εt = − εy",1.43,-2.50,33,TENS)
         self.show(sec,forces,Pnote,Mnote,bal)
-        Pnote.set_opacity(0);Mnote.set_opacity(0);bal.set_opacity(0)
+        
         self.play_for(10,[
             (7,[m.FadeIn(sec)]),(9,[m.FadeIn(forces)]),
             (10,[m.FadeIn(Pnote)]),
@@ -286,10 +302,10 @@ class PeliculaInteraccionPM(m.ThreeDScene):
     def act_interaction(self,start,end):
         axes=chart_axes()
         curve=curve_object()
-        phi_curve=curve_object("design");phi_curve.set_opacity(0)
+        phi_curve=curve_object("design");
         c=m.ValueTracker(1800.)
         dot=m.always_redraw(lambda:plot_dot(c.get_value()))
-        dot.set_opacity(0)
+        
         nominal=txt("resistencia nominal",2.90,2.40,23,CONCRETE)
         design=txt("φPn, φMn",3.60,1.94,27,COMP)
         pure=txt("Pn = 0",2.0,-2.54,28,AXIS)
@@ -299,8 +315,7 @@ class PeliculaInteraccionPM(m.ThreeDScene):
         demandB=m.Dot(point=chart_coord(320,2100),radius=.115,color=TENS)
         for ob in (axes,dot,curve,phi_curve,nominal,design,pure,cap,tension,demandA,demandB):
             self.show(ob)
-        for ob in (dot,curve,phi_curve,nominal,design,pure,cap,tension,demandA,demandB):
-            ob.set_opacity(0)
+
         self.play_for(13,[
             (7,[m.FadeIn(axes)]),(14,[m.Create(curve)]),
             (9,[m.FadeIn(dot)]),
@@ -340,7 +355,7 @@ class PeliculaInteraccionPM(m.ThreeDScene):
         my=txt("My",4.00,-.30,37,TENS)
         caution=txt("La interacción uniaxial no verifica la estabilidad",.15,-2.54,26,SOFT)
         self.show(delta,mx,my,caution)
-        for ob in (delta,mx,my,caution):ob.set_opacity(0)
+
         self.play_for(19,[
             (10,[m.FadeIn(solid),m.FadeIn(bars)]),
             (9,[m.FadeIn(load)]),
@@ -348,7 +363,7 @@ class PeliculaInteraccionPM(m.ThreeDScene):
             (9,[m.FadeIn(mx),m.FadeIn(my)])])
         c=m.ValueTracker(220.)
         sec=m.always_redraw(lambda:animate_section(c.get_value(),center=(2.65,0),w=2.8))
-        self.show(sec);sec.set_opacity(0)
+        self.show(sec);
         self.play_for(20,[
             (8,[m.FadeOut(mx),m.FadeOut(my),m.FadeOut(delta)]),
             (11,[m.FadeIn(sec)]),

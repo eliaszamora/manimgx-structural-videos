@@ -53,7 +53,7 @@ jobs:
           import os,subprocess
           from interaction_pm.story import BEATS
           from pathlib import Path
-          from interaction_pm.scene_cinematic import ACTS
+          ACTS=((0,4),(4,10),(10,13),(13,19),(19,21))
           act=int(os.environ['PM_ACT_INDEX'])
           expected=sum(x['duration'] for x in BEATS[slice(*ACTS[act])])
           file=Path(f'build/act_{act}/scene.mp4')

@@ -1,0 +1,28 @@
+name: Ingeniería P-M - validación independiente
+on:
+  workflow_dispatch:
+  push:
+    branches: [video/pm-3d-cinematic]
+    paths:
+      - "interaction_pm/model.py"
+      - "interaction_pm/test_model.py"
+      - "interaction_pm/visual_math.py"
+      - "interaction_pm/test_visual_math.py"
+      - ".github/workflows/pm_engineering_qa.yml"
+permissions:
+  contents: read
+jobs:
+  engineering-reference:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Dependencias de integración de fibras
+        run: python -m pip install -q "numpy>=2,<3"
+      - name: Sintaxis e integración analítica/fibras
+        run: |
+          python -m py_compile interaction_pm/model.py interaction_pm/test_model.py
+          python -m unittest discover -v -s interaction_pm -p "test_*.py"

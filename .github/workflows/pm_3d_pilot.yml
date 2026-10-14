@@ -1,0 +1,75 @@
+name: Piloto cinematográfico PM 3D
+on:
+  workflow_dispatch:
+  push:
+    branches: [video/pm-3d-cinematic]
+    paths: [interaction_pm/scene_3d_pilot.py, .github/workflows/pm_3d_pilot.yml]
+permissions:
+  contents: read
+jobs:
+  pilot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Instalar ManimGX
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg mesa-vulkan-drivers libvulkan1 libegl1 libgl1
+          python -m pip install -q manimgx numpy pillow
+      - name: Render piloto tridimensional
+        run: |
+          python -m py_compile interaction_pm/model.py interaction_pm/visual_math.py interaction_pm/scene_3d_pilot.py
+          python -m unittest discover -v -s interaction_pm -p 'test_*.py'
+          manimgx render interaction_pm/scene_3d_pilot.py -r 1280x720 --fps 24 --preset ultrafast --crf 20 2>&1 | tee manimgx3d.log
+          mkdir -p out
+          python - <<'PY'
+          from pathlib import Path
+          import shutil
+          vids=[p for p in Path('.').rglob('*.mp4') if 'out' not in p.parts]
+          if not vids:raise SystemExit('No MP4')
+          shutil.copy2(max(vids,key=lambda p:p.stat().st_mtime),'out/piloto3d.mp4')
+          PY
+      - name: Fotogramas y revisión automatizada de 8 instantes
+        run: |
+          python - <<'PY'
+          import subprocess
+          from pathlib import Path
+          from PIL import Image,ImageOps,ImageDraw,ImageStat
+          v=Path('out/piloto3d.mp4')
+          assert v.is_file() and v.stat().st_size>50000
+          duration=float(subprocess.check_output(['ffprobe','-v','error','-show_entries',
+              'format=duration','-of','csv=p=0',str(v)]).decode().strip())
+          assert abs(duration-49)<1.5,(duration,49)
+          ts=[2,8,14,22,29,35,43,47]
+          ims=[]
+          for t in ts:
+              path=Path(f'out/frame_{t:02d}.jpg')
+              subprocess.run(['ffmpeg','-hide_banner','-loglevel','error','-y',
+                 '-ss',str(t),'-i',str(v),'-frames:v','1','-vf','scale=640:-2',str(path)],check=True)
+              image=Image.open(path).convert('RGB')
+              sd=ImageStat.Stat(image.convert('L')).stddev[0]
+              assert sd>3,(t,'blank frame')
+              thumb=ImageOps.contain(image,(480,270))
+              tile=Image.new('RGB',(500,302),'#0B101C')
+              tile.paste(thumb,((500-thumb.width)//2,6))
+              ImageDraw.Draw(tile).text((12,278),f't = {t} s',fill='#B8C7D6')
+              ims.append(tile)
+          sheet=Image.new('RGB',(2000,604),'#0B101C')
+          for i,im in enumerate(ims):
+              sheet.paste(im,((i%4)*500,(i//4)*302))
+          sheet.save('out/contact_sheet.jpg',quality=90)
+          print('Eight sampled frames, 49 sec duration, independent math QC: PASS')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: piloto-columna-3D
+          path: |
+            out/piloto3d.mp4
+            out/contact_sheet.jpg
+            out/frame_*.jpg
+            manimgx3d.log

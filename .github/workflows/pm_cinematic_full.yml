@@ -1,0 +1,161 @@
+name: Película P-M cinematográfica - ManimGX y Kokoro
+on:
+  workflow_dispatch:
+  push:
+    branches: [video/pm-3d-cinematic]
+    paths:
+      - interaction_pm/scene_cinematic.py
+      - interaction_pm/qa_cinematic.py
+permissions:
+  contents: read
+jobs:
+  engineering:
+    name: Control independiente
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install -q "numpy>=2,<3"
+      - run: |
+          python -m py_compile interaction_pm/scene_cinematic.py interaction_pm/model.py interaction_pm/visual_math.py interaction_pm/story.py
+          python -m unittest discover -s interaction_pm -p 'test_*.py' -v
+  render:
+    name: Escena ManimGX (acto ${{ matrix.act }})
+    needs: engineering
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        act: [0, 1, 2, 3, 4]
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: ManimGX 3D
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg mesa-vulkan-drivers libvulkan1 libegl1 libgl1 fonts-noto-core
+          python -m pip install -q manimgx numpy pillow
+      - name: Renderizar acto y verificar duración
+        env:
+          PM_ACT_INDEX: ${{ matrix.act }}
+        run: |
+          set -o pipefail
+          mkdir -p build/act_${{ matrix.act }}
+          manimgx render interaction_pm/scene_cinematic.py -o build/act_${{ matrix.act }}/scene.mp4 -r 1280x720 --fps 24 --preset ultrafast --crf 22 2>&1 | tee build/act_${{ matrix.act }}/manimgx.log
+          python - <<'PY'
+          import os,subprocess
+          from interaction_pm.story import BEATS
+          from pathlib import Path
+          ACTS=((0,4),(4,10),(10,13),(13,19),(19,21))
+          act=int(os.environ['PM_ACT_INDEX'])
+          expected=sum(x['duration'] for x in BEATS[slice(*ACTS[act])])
+          file=Path(f'build/act_{act}/scene.mp4')
+          assert file.exists() and file.stat().st_size>50000
+          duration=float(subprocess.check_output(['ffprobe','-v','error','-show_entries','format=duration','-of','csv=p=0',str(file)]))
+          print('Act',act,'seconds',duration,'expected',expected)
+          assert abs(duration-expected)<2,(duration,expected)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cinematic-pm-act-${{ matrix.act }}
+          path: build/act_${{ matrix.act }}/
+          if-no-files-found: warn
+  speech:
+    name: Voz española Kokoro natural
+    needs: engineering
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq espeak-ng ffmpeg libsndfile1
+          python -m pip install -q "kokoro>=0.9.4" numpy soundfile
+      - name: Narrar sin cortar frases
+        run: python interaction_pm/voice.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cinematic-pm-kokoro
+          path: build/interaction_pm/narracion.wav
+  final:
+    name: Unir 5 actos, narración y auditar
+    needs: [render, speech]
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+      - name: Descargar escenas
+        uses: actions/download-artifact@v4
+        with:
+          pattern: cinematic-pm-act-*
+          path: build/acts
+      - name: Descargar voz
+        uses: actions/download-artifact@v4
+        with:
+          name: cinematic-pm-kokoro
+          path: build/voice
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Codificar MP4 de 5 actos
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+          python -m pip install -q numpy pillow
+          python - <<'PY'
+          from pathlib import Path
+          import subprocess,shutil
+          from interaction_pm.story import BEATS,TOTAL_SECONDS
+          ACTS=((0,4),(4,10),(10,13),(13,19),(19,21))
+          out=Path('build/final');out.mkdir(parents=True,exist_ok=True)
+          videos=[]
+          for i,(a,b) in enumerate(ACTS):
+              secs=sum(x['duration'] for x in BEATS[a:b])
+              sources=list(Path('build/acts').rglob(f'cinematic-pm-act-{i}/scene.mp4'))
+              if len(sources)!=1:raise RuntimeError((i,sources))
+              src=sources[0]
+              dst=out/f'act_{i}.mp4'
+              subprocess.run(['ffmpeg','-hide_banner','-loglevel','error','-y',
+                  '-i',str(src),'-vf','tpad=stop_mode=clone:stop_duration=100,fps=24,format=yuv420p',
+                  '-t',str(secs),'-an','-c:v','libx264','-preset','veryfast','-crf','23',
+                  '-movflags','+faststart',str(dst)],check=True)
+              d=float(subprocess.check_output(['ffprobe','-v','error','-show_entries','format=duration',
+                     '-of','csv=p=0',str(dst)]))
+              if abs(d-secs)>.2:raise RuntimeError(f'Act {i} {d} != {secs}')
+              videos.append(dst)
+              print('Act normalized',i,secs,flush=True)
+          lst=out/'list.txt'
+          lst.write_text(''.join(f"file '{v.name}'\n" for v in videos))
+          joined=out/'joined.mp4'
+          subprocess.run(['ffmpeg','-hide_banner','-loglevel','error','-y',
+             '-f','concat','-safe','0','-i',str(lst),'-c','copy',str(joined)],check=True)
+          voice=list(Path('build/voice').rglob('narracion.wav'))
+          if len(voice)!=1:raise RuntimeError(voice)
+          final=out/'interaccion_PM_CINEMATICA_MANIMGX_KOKORO.mp4'
+          subprocess.run(['ffmpeg','-hide_banner','-loglevel','error','-y',
+             '-i',str(joined),'-i',str(voice[0]),'-map','0:v:0','-map','1:a:0',
+             '-c:v','copy','-c:a','aac','-b:a','192k','-t',str(TOTAL_SECONDS),
+             '-movflags','+faststart',str(final)],check=True)
+          print('Film',final,'size',final.stat().st_size,flush=True)
+          PY
+      - name: Test A-V y contact sheet
+        run: |
+          python interaction_pm/qa_cinematic.py build/final/interaccion_PM_CINEMATICA_MANIMGX_KOKORO.mp4 --out build/final/qa
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pelicula-PM-cinematica-auditoria
+          path: |
+            build/final/interaccion_PM_CINEMATICA_MANIMGX_KOKORO.mp4
+            build/final/qa/*.jpg
+            build/final/qa/*.json
+          if-no-files-found: error

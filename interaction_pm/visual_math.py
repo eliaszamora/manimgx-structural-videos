@@ -16,7 +16,7 @@ class Geometry:
     section_cx:float=3.24
     section_cy:float=.12
     volume_side:float=3.65
-    strain_x0:float=5.13
+    strain_x0:float=5.65
     strain_y0:float=1.53
     strain_y1:float=-1.29
     strain_scale:float=.28/.003

@@ -6,6 +6,8 @@ on:
     paths:
       - "interaction_pm/model.py"
       - "interaction_pm/test_model.py"
+      - "interaction_pm/visual_math.py"
+      - "interaction_pm/test_visual_math.py"
       - ".github/workflows/pm_engineering_qa.yml"
 permissions:
   contents: read

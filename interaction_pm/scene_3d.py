@@ -32,7 +32,7 @@ def stroke(p, q, color, width=3):
     return m.Line(p, q, color=color, stroke_width=width)
 
 def world(x,y,z):
-    return np.array([x,y,z], dtype=float)
+    return np.array([x,y,z-.86], dtype=float)
 
 # Real 3D section: 400 x 400 mm mapped to 1.76 x 1.76 scene units.
 X0, Y0 = -3.55, 0.0
@@ -152,10 +152,10 @@ THETA=[-43,-37,-60,-74,-78,-89,-83,-61,-49,-55,-67,-52,-86,-47,-41,-65,-81,-58,-
 class FlexocompresionTresDimensiones(m.ThreeDScene):
     def construct(self):
         self.camera.background_color = INK
-        self.set_camera_orientation(phi=65*m.DEGREES,theta=-43*m.DEGREES)
+        self.set_camera_orientation(phi=77*m.DEGREES,theta=-89*m.DEGREES)
         self.add(m.SunLight(4*m.UP+3*m.OUT),
                  m.AmbientLight(intensity=.55))
-        c=m.ValueTracker(330.)
+        c=m.ValueTracker(72.)
         concrete=m.Prism(dimensions=[SIDE,SIDE,L],
                       fill_color="#4DA7B6",fill_opacity=.12,
                       stroke_color=TURQUOISE,stroke_width=1.5
@@ -172,7 +172,7 @@ class FlexocompresionTresDimensiones(m.ThreeDScene):
             steel.add(rod)
         self.play(m.FadeIn(steel),run_time=1.1)
         ties=m.Group()
-        for z in np.linspace(-L/2+.22,L/2-.22,10):
+        for z in np.linspace(-L/2+.22,L/2-.22,8):
             rr=HALF-.12
             corners=[world(X0+x,y,z) for x,y in
                 [(-rr,-rr),(rr,-rr),(rr,rr),(-rr,rr)]]
@@ -237,6 +237,10 @@ class FlexocompresionTresDimensiones(m.ThreeDScene):
                        28 if len(EQ[i])>41 else 33,WHITE)
                 self.play(m.Transform(formula,eq),run_time=1.4)
                 spent+=1.4
+            if i==1:
+                # The line of action moves away from the centroid: e creates M=P*e.
+                self.play(load.animate.shift(.42*m.UP),run_time=4.0)
+                spent+=4.0
             if i==13:
                 graph_dot_visibility.set_value(1.0)
                 self.play(m.FadeOut(sec),m.FadeOut(strain),

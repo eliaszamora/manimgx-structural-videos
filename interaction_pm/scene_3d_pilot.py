@@ -12,8 +12,8 @@ import manimgx as m
 BG="#0B101C"; CONCRETE="#50D7D0"; STEEL="#F9C35D"
 COMP="#FF9568"; TENSION="#77ABFF"; WHITE="#EDF2FA"
 MUTED="#8DA2BC"; ZERO="#F7DC79"
-SIDE=2.85; L=5.05; MID=np.array([-1.95,-.15,0.])
-R=.075
+SIDE=3.65; L=5.85; MID=np.array([-2.27,-.15,-.20])
+R=.095
 
 def tx(value, size=27, color=WHITE):
     return m.Text(value, font="Noto Sans", font_size=size, color=color)
@@ -28,7 +28,7 @@ def rectangle_section(c):
     """Constant scale mapping of c and Whitney a. One physical section."""
     r=analyze(c)
     cx,cy=3.24,.12
-    sz=2.82
+    sz=3.14
     half=sz/2
     g=m.VGroup()
     g.add(m.Rectangle(width=sz,height=sz,stroke_color=CONCRETE,stroke_width=3,
@@ -67,27 +67,27 @@ def strain_graph(c):
 
 def dot_on_chart(c):
     rr=analyze(c)
-    xp=.7+4.8*rr["Mn"]/350
-    yp=-1.98+3.3*(rr["Pn"]+720)/(4600+720)
+    xp=-4.55+9.1*rr["Mn"]/350
+    yp=-2.25+4.5*(rr["Pn"]+720)/(4600+720)
     return m.Dot(point=[xp,yp,0],radius=.11,color=ZERO)
 
 def chart():
     g=m.VGroup()
-    xmax=5.52; xmin=.7; ymin=-2; ymax=1.50
+    xmax=4.60; xmin=-4.55; ymin=-2.25; ymax=2.40
     g.add(line([xmin,ymin],[xmin,ymax],MUTED,2))
-    g.add(line([xmin,-1.57],[xmax,-1.57],MUTED,2))
+    g.add(line([xmin,-1.641],[xmax,-1.641],MUTED,2))
     # Curves are obtained from engineering model, not manually drawn Béziers.
     sample=[p for p in points(350) if p["Mn"]>0 and p["Mn"]<360]
     curve=m.VMobject(color=CONCRETE,stroke_width=5)
     coords=[]
     for rr in sample:
-        xp=xmin+4.8*rr["Mn"]/350
-        yp=-1.98+3.3*(rr["Pn"]+720)/(4600+720)
+        xp=xmin+9.1*rr["Mn"]/350
+        yp=-2.25+4.5*(rr["Pn"]+720)/(4600+720)
         coords.append([xp,yp,0])
     curve.set_points_smoothly(coords)
     g.add(curve)
-    g.add(tx("P",21,MUTED).move_to([.43,1.65,0]))
-    g.add(tx("M",21,MUTED).move_to([5.68,-1.68,0]))
+    g.add(tx("P",23,MUTED).move_to([-4.78,2.63,0]))
+    g.add(tx("M",23,MUTED).move_to([4.82,-1.77,0]))
     return g
 
 class PorQuePM3D(m.ThreeDScene):
@@ -96,7 +96,7 @@ class PorQuePM3D(m.ThreeDScene):
         self.set_camera_orientation(phi=65*m.DEGREES,theta=-48*m.DEGREES)
         self.add(m.SunLight(2*m.UP+3*m.OUT),m.AmbientLight(intensity=.70))
         volume=m.Prism(dimensions=[SIDE,SIDE,L],fill_color=CONCRETE,
-                  fill_opacity=.095,stroke_color=CONCRETE,stroke_width=1.15
+                  fill_opacity=.16,stroke_color=CONCRETE,stroke_width=1.7
                  ).move_to(MID)
         bars=m.Group()
         a=SIDE*(.5-S.dp/S.h)
@@ -112,7 +112,7 @@ class PorQuePM3D(m.ThreeDScene):
             h=SIDE*.5-.16
             pts=[point3(x,y,zz) for x,y in
                  [(-h,-h),(h,-h),(h,h),(-h,h)]]
-            ties.add(m.Polygon(*pts,color=CONCRETE,stroke_width=2,fill_opacity=0))
+            ties.add(m.Polygon(*pts,color=CONCRETE,stroke_width=2.3,fill_opacity=0))
         # The same c drives the equivalent compression block and the section.
         c=m.ValueTracker(290.)
         block=m.always_redraw(lambda:
@@ -132,9 +132,7 @@ class PorQuePM3D(m.ThreeDScene):
         section=m.always_redraw(lambda:rectangle_section(c.get_value()))
         eps=m.always_redraw(lambda:strain_graph(c.get_value()))
         trace=chart()
-        trace.set_opacity(0)
         dot=m.always_redraw(lambda:dot_on_chart(c.get_value()))
-        dot.set_opacity(0)
         self.play(m.FadeIn(volume),run_time=2.2)
         self.play(m.FadeIn(bars),run_time=3.6)
         self.play(m.FadeIn(ties),run_time=2.2)          # t=8
@@ -146,7 +144,10 @@ class PorQuePM3D(m.ThreeDScene):
         self.add_fixed_in_frame_mobjects(section,eps)
         self.play(m.FadeIn(section),m.FadeIn(eps),run_time=4.0) # t=29
         self.play(c.animate.set_value(175.),run_time=6.5) # t=35.5
-        self.play(m.FadeOut(section),m.FadeOut(eps),run_time=1.8)
+        self.play(m.FadeOut(section),m.FadeOut(eps),
+                  m.FadeOut(volume),m.FadeOut(bars),m.FadeOut(ties),
+                  m.FadeOut(load),run_time=1.8)
+        self.remove(block,neutral)
         self.add_fixed_in_frame_mobjects(trace,dot)
-        self.play(m.FadeIn(trace),m.FadeIn(dot),run_time=4.2) # t=41.5
+        self.play(m.Create(trace),m.FadeIn(dot),run_time=4.2) # t=41.5
         self.play(c.animate.set_value(265.),run_time=7.5) # t=49

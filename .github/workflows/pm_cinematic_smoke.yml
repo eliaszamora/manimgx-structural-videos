@@ -1,0 +1,47 @@
+name: P-M cinematic smoke 49s
+on:
+  workflow_dispatch:
+  push:
+    branches: [video/pm-3d-cinematic]
+    paths:
+      - interaction_pm/scene_cinematic.py
+      - .github/workflows/pm_cinematic_smoke.yml
+permissions:
+  contents: read
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: ManimGX y software libre
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg libvulkan1 mesa-vulkan-drivers libegl1 libgl1
+          python -m pip install -q manimgx numpy pillow
+      - name: Validación analítica y sintaxis
+        run: |
+          python -m py_compile interaction_pm/scene_cinematic.py interaction_pm/model.py
+          python -m unittest discover -s interaction_pm -p "test_*.py" -v
+      - name: Render beat de apertura
+        env:
+          PM_ACT_INDEX: 0
+          PM_SMOKE: "1"
+        run: |
+          mkdir -p build/cinematic_smoke
+          manimgx render interaction_pm/scene_cinematic.py -o build/cinematic_smoke/opening.mp4 -r 1280x720 --fps 24 --preset ultrafast --crf 22
+          ffprobe -v error -show_entries format=duration -of csv=p=0 build/cinematic_smoke/opening.mp4
+      - name: Toma de imágenes
+        run: |
+          for t in 2 8 15 24 35 45; do
+            ffmpeg -hide_banner -loglevel error -y -ss "$t" -i build/cinematic_smoke/opening.mp4 -frames:v 1 build/cinematic_smoke/f_$t.jpg
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pm-cinematic-smoke-49s
+          path: build/cinematic_smoke/
+          if-no-files-found: warn

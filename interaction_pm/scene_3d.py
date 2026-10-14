@@ -35,10 +35,10 @@ def world(x,y,z):
     return np.array([x,y,z], dtype=float)
 
 # Real 3D section: 400 x 400 mm mapped to 1.76 x 1.76 scene units.
-X0, Y0 = -3.3, 0.0
-SIDE = 1.76
+X0, Y0 = -3.55, 0.0
+SIDE = 2.12
 HALF = SIDE/2
-L = 3.50
+L = 4.30
 def bar_xy():
     for sign in (1,-1):
         for xx in (-.65,-.22,.22,.65):
@@ -61,9 +61,9 @@ def axis_line(a,b,width=2,color=GRID):
     return stroke([a[0],a[1],0], [b[0],b[1],0],color,width)
 
 # Fixed-frame right side, dimensions chosen for no text collisions at 1920x1080
-SCX, SCY=2.16,.12
-SH=2.45
-SX=2.45
+SCX, SCY=2.05,-.32
+SH=2.82
+SX=2.77
 def section_overlay(c):
     r=analyze(max(.02,c))
     grp=m.VGroup()
@@ -84,7 +84,7 @@ def section_overlay(c):
     return grp
 
 # Actual strain distribution: compatible with c and eps_cu=0.003
-ex0=4.45
+ex0=4.60
 def strain_overlay(c):
     c=max(.02,c)
     grp=m.VGroup()
@@ -166,13 +166,14 @@ class FlexocompresionTresDimensiones(m.ThreeDScene):
             rod=m.Cylinder(radius=.057,height=L-.05,
                            direction=m.Z_AXIS,
                            resolution=(12,6),fill_color=STEEL,
-                           fill_opacity=1,stroke_width=0)
+                           fill_opacity=1,stroke_width=0,checkerboard_colors=False)
+            rod.set_color(STEEL)
             rod.move_to(world(X0+dx,dy,0))
             steel.add(rod)
         self.play(m.FadeIn(steel),run_time=1.1)
         ties=m.Group()
-        for z in (-1.55,-1.14,-.73,-.32,.09,.50,.91,1.32,1.55):
-            rr=.76
+        for z in np.linspace(-L/2+.22,L/2-.22,10):
+            rr=HALF-.12
             corners=[world(X0+x,y,z) for x,y in
                 [(-rr,-rr),(rr,-rr),(rr,rr),(-rr,rr)]]
             tie=m.Polygon(*corners,color=TURQUOISE,stroke_width=1.6,
@@ -190,7 +191,7 @@ class FlexocompresionTresDimensiones(m.ThreeDScene):
         )
         self.add(neutral)
         # Actual external axial load along column axis (Z).
-        load=m.Arrow3D(world(X0,0,2.85),world(X0,0,1.81),
+        load=m.Arrow3D(world(X0,0,L/2+1.05),world(X0,0,L/2+.07),
                        color=COMPRESS,thickness=.055)
         self.add(load)
 
@@ -200,7 +201,7 @@ class FlexocompresionTresDimensiones(m.ThreeDScene):
            txt("c",.50,1.6,27,GOLD),
            txt("ε",5.65,1.55,27,GOLD),
         )
-        formula=txt(EQ[0],2.85,-3.15,33,WHITE)
+        formula=txt(EQ[0],2.8,-2.73,35,WHITE)
         self.add_fixed_in_frame_mobjects(sec,strain,micro,formula)
         self.add_fixed_in_frame_mobjects(
            txt("0,003",5.35,2.0,20,COMPRESS))
@@ -218,8 +219,9 @@ class FlexocompresionTresDimensiones(m.ThreeDScene):
         gx.add(curve("phiMn","phiPn",COMPRESS))
         gx.add(txt("P",CX0-.32,CY0+GH+.25,29,MUTED))
         gx.add(txt("M",CX0+GW+.26,CY0-.23,29,MUTED))
+        graph_dot_visibility=m.ValueTracker(0.0)
         point=m.always_redraw(lambda:m.Dot(point=graph_xy(analyze(max(.02,c.get_value()))["Mn"],
-                              analyze(max(.02,c.get_value()))["Pn"]),radius=.115,color=GOLD))
+                              analyze(max(.02,c.get_value()))["Pn"]),radius=.115,color=GOLD).set_opacity(graph_dot_visibility.get_value()))
         gx.add(point)
         # initial graph invisible, but registered as screen-fixed.
         self.add_fixed_in_frame_mobjects(gx)
@@ -231,11 +233,12 @@ class FlexocompresionTresDimensiones(m.ThreeDScene):
             # Equations appear only where their physical referent is visible.
             spent=3.0 if i==0 else 0.0
             if i:
-                eq=txt(EQ[i],2.85,-3.15,
+                eq=txt(EQ[i],2.8,-2.73,
                        28 if len(EQ[i])>41 else 33,WHITE)
                 self.play(m.Transform(formula,eq),run_time=1.4)
                 spent+=1.4
             if i==13:
+                graph_dot_visibility.set_value(1.0)
                 self.play(m.FadeOut(sec),m.FadeOut(strain),
                     m.FadeOut(micro),m.FadeIn(gx),run_time=2.3)
                 spent+=2.3

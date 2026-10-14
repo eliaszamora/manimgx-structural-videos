@@ -1,0 +1,41 @@
+name: Piloto cinematográfico PM 3D
+on:
+  workflow_dispatch:
+  push:
+    branches: [video/pm-3d-cinematic]
+    paths: [interaction_pm/scene_3d_pilot.py, .github/workflows/pm_3d_pilot.yml]
+permissions:
+  contents: read
+jobs:
+  pilot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Instalar ManimGX
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg mesa-vulkan-drivers libvulkan1 libegl1 libgl1
+          python -m pip install -q manimgx numpy
+      - name: Render piloto tridimensional
+        run: |
+          python -m py_compile interaction_pm/scene_3d_pilot.py
+          manimgx render interaction_pm/scene_3d_pilot.py 2>&1 | tee manimgx3d.log
+          mkdir -p out
+          python - <<'PY'
+          from pathlib import Path
+          import shutil
+          vids=[p for p in Path('.').rglob('*.mp4') if 'out' not in p.parts]
+          if not vids:raise SystemExit('No MP4')
+          shutil.copy2(max(vids,key=lambda p:p.stat().st_mtime),'out/piloto3d.mp4')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: piloto-columna-3D
+          path: |
+            out/piloto3d.mp4
+            manimgx3d.log

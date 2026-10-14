@@ -95,23 +95,45 @@ def steel_law():
     g.add(txt("fy",cx+1.15,cy+1.30,22,COMP))
     return g
 
+def moment_arms(c):
+    """Visual lever arms measured about the geometric centroid of the section."""
+    rr=analyze(c)
+    cx,cy=-2.70,.13
+    w=5.15;top=cy+w/2
+    ys=[top-w*S.dp/S.h, top-w*rr['a']/(2*S.h),top-w*S.dt/S.h]
+    x=.18
+    result=m.VGroup(ln([x,cy-2.65],[x,cy+2.65],SOFT,2))
+    result.add(m.Dot(point=[x,cy,0],radius=.07,color=AXIS))
+    for j,y in enumerate(ys):
+        if j==1:col=COMP;mark="zCc"
+        else:col=STEEL;mark="z"+str(j)
+        result.add(ln([x,cy],[x,y],col,3))
+        result.add(ln([x-.15,y],[x+.15,y],col,2))
+        # Place dimension text away from closely spaced upper forces.
+        if j in (0,2):
+            result.add(txt(mark,x-.48,(y+cy)/2,19,col))
+    return result
+
 def force_vectors(c):
-    """Every arrow orientation and relative length follows signed resultants."""
-    rr=analyze(c); cx=1.30
+    """Arrows tied to physical positions and net internal forces (kN)."""
+    rr=analyze(c)
+    top=.13+5.15/2
+    cx=.86
     grp=m.VGroup()
     for j,v in enumerate(rr["steel"]):
-        y=1.35 if j==0 else -1.35
-        F=v["force_kN"];scale=min(2.15,.4+abs(F)/180)
-        start=[cx,y,0]
-        end=[cx+scale*(1 if F>=0 else -1),y,0]
+        y=top-5.15*v["y"]/S.h
+        F=v["force_kN"];length=min(2.30,.30+abs(F)/190)
+        endpoint=cx+length*(1 if F>=0 else -1)
         col=COMP if F>=0 else TENS
-        grp.add(m.Arrow(start,end,buff=0,color=col,stroke_width=7))
-        grp.add(txt("Fs"+str(j+1),cx+2.55 if F>=0 else cx-2.45,y,22,col))
-    Cc=rr["Cc_kN"]; a=rr["a"]
-    y=1.60-3.0*(a/2)/S.h
-    mag=min(2.6,.5+Cc/850)
-    grp.add(m.Arrow([cx,y+.25,0],[cx+mag,y+.25,0],buff=0,color=COMP,stroke_width=7))
-    grp.add(txt("Cc",cx+2.55,y+.45,22,COMP))
+        grp.add(m.Arrow([cx,y,0],[endpoint,y,0],buff=0,color=col,stroke_width=7))
+        labelx=endpoint+.33 if F>=0 else endpoint-.40
+        labely=y+.23 if j==0 else y-.24
+        grp.add(txt("Fs"+str(j+1),labelx,labely,21,col))
+    Cc=rr["Cc_kN"]; y=top-5.15*rr["a"]/(2*S.h)
+    length=min(2.55,.50+Cc/1050)
+    endpoint=cx+length
+    grp.add(m.Arrow([cx,y,0],[endpoint,y,0],buff=0,color=COMP,stroke_width=8))
+    grp.add(txt("Cc",endpoint+.35,y-.28,23,COMP))
     return grp
 
 def chart_coord(M,P):
@@ -149,7 +171,7 @@ def plot_dot(c,phi=False):
     return m.Dot(point=chart_coord(M,P),radius=.118,color=AXIS)
 
 def volume_geometry():
-    base=np.array([-1.85,0.,-.25])
+    base=np.array([-.45,0.,-.25])
     def v(x,y,z):return base+np.array([x,y,z])
     solid=m.Prism(dimensions=[VOLUME_W,VOLUME_W,5.65],
                   fill_color=CONCRETE,fill_opacity=.15,
@@ -171,6 +193,7 @@ def volume_geometry():
                         stroke_width=2,fill_opacity=0,color=CONCRETE)
         ties.add(tie)
     load=m.Arrow3D(v(0,0,3.88),v(0,0,2.85),color=COMP,thickness=.07)
+    m.Group(solid,bars,ties,load).scale(1.25,about_point=base)
     return solid,bars,ties,load,base
 
 class PeliculaInteraccionPM(m.ThreeDScene):
@@ -235,6 +258,8 @@ class PeliculaInteraccionPM(m.ThreeDScene):
             (10,[m.FadeOut(centroid)]),(10,[m.FadeIn(detail)])])
         self.show(sec);
         self.play_for(2,[
+            (8,[solid.animate.shift(1.50*m.LEFT),bars.animate.shift(1.50*m.LEFT),
+                 ties.animate.shift(1.50*m.LEFT),load.animate.shift(1.50*m.LEFT)]),
             (8,[m.FadeIn(sec)]),(12,[m.FadeOut(moment)]),
             (12,[m.FadeOut(sec)]),(10,[m.FadeIn(sec)])])
         # Changing from 3D to orthographic section is deliberately tied to narration.
@@ -247,9 +272,9 @@ class PeliculaInteraccionPM(m.ThreeDScene):
 
     def act_compatibility(self,start,end):
         c=m.ValueTracker(290.)
-        sec=m.always_redraw(lambda:animate_section(c.get_value()))
-        strain=m.always_redraw(lambda:animate_strain(c.get_value()))
-        law=steel_law()
+        sec=m.always_redraw(lambda:animate_section(c.get_value(),center=(-3.12,.08),w=5.05))
+        strain=m.always_redraw(lambda:animate_strain(c.get_value(),origin=(2.65,.08),height=5.05))
+        law=steel_law().scale(1.38).shift([.15,0,0])
         steelpoint=m.always_redraw(lambda:steel_indicator(c.get_value()))
         blocknote=txt("a = β1 c",2.0,-2.45,33,AXIS)
         epsnote=txt("εs(y) = 0,003 (c − y) / c",.55,-2.54,30,AXIS)
@@ -288,12 +313,13 @@ class PeliculaInteraccionPM(m.ThreeDScene):
 
     def act_equilibrium(self,start,end):
         c=m.ValueTracker(250.)
-        sec=m.always_redraw(lambda:animate_section(c.get_value(),center=(-2.80,.13),w=3.75))
+        sec=m.always_redraw(lambda:animate_section(c.get_value(),center=(-2.70,.13),w=5.15))
         forces=m.always_redraw(lambda:force_vectors(c.get_value()))
+        arms=m.always_redraw(lambda:moment_arms(c.get_value()))
         Pnote=txt("Pn = Cc + Σ Fs",.8,-2.55,35,AXIS)
         Mnote=txt("Mn = Σ Fi · zi",.85,-2.55,35,AXIS)
         bal=txt("εt = − εy",1.43,-2.50,33,TENS)
-        self.show(sec,forces,Pnote,Mnote,bal)
+        self.show(sec,forces,arms,Pnote,Mnote,bal)
         
         self.play_for(10,[
             (7,[m.FadeIn(sec)]),(9,[m.FadeIn(forces)]),
@@ -301,11 +327,11 @@ class PeliculaInteraccionPM(m.ThreeDScene):
             (11,[c.animate.set_value(150)]),
             (8,[c.animate.set_value(250)])])
         self.play_for(11,[
-            (8,[m.FadeOut(Pnote)]),(9,[m.FadeIn(Mnote)]),
+            (8,[m.FadeOut(Pnote)]),(9,[m.FadeIn(Mnote),m.FadeIn(arms)]),
             (13,[c.animate.set_value(175)]),
             (12,[c.animate.set_value(315)])])
         self.play_for(12,[
-            (10,[m.FadeOut(Mnote)]),
+            (10,[m.FadeOut(Mnote),m.FadeOut(arms)]),
             (9,[m.FadeIn(bal)]),
             (18,[c.animate.set_value(S.balanced_c)]),
             (11,[c.animate.set_value(165)])])

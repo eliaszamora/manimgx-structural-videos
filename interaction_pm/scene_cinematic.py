@@ -193,7 +193,7 @@ def volume_geometry():
                         stroke_width=2,fill_opacity=0,color=CONCRETE)
         ties.add(tie)
     load=m.Arrow3D(v(0,0,3.88),v(0,0,2.85),color=COMP,thickness=.07)
-    m.Group(solid,bars,ties,load).scale(1.25,about_point=base)
+    m.Group(solid,bars,ties,load).scale(1.10,about_point=base)
     return solid,bars,ties,load,base
 
 class PeliculaInteraccionPM(m.ThreeDScene):

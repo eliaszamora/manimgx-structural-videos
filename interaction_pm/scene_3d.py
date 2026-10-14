@@ -161,7 +161,7 @@ class FlexocompresionTresDimensiones(m.ThreeDScene):
                       stroke_color=TURQUOISE,stroke_width=1.5
                       ).move_to(world(X0,Y0,0))
         self.play(m.FadeIn(concrete),run_time=1.0)
-        steel=m.VGroup()
+        steel=m.Group()
         for dx,dy in bar_xy():
             rod=m.Cylinder(radius=.057,height=L-.05,
                            direction=m.Z_AXIS,
@@ -170,7 +170,7 @@ class FlexocompresionTresDimensiones(m.ThreeDScene):
             rod.move_to(world(X0+dx,dy,0))
             steel.add(rod)
         self.play(m.FadeIn(steel),run_time=1.1)
-        ties=m.VGroup()
+        ties=m.Group()
         for z in (-1.55,-1.14,-.73,-.32,.09,.50,.91,1.32,1.55):
             rr=.76
             corners=[world(X0+x,y,z) for x,y in
@@ -225,7 +225,7 @@ class FlexocompresionTresDimensiones(m.ThreeDScene):
         self.add_fixed_in_frame_mobjects(gx)
         gx.set_opacity(0)
         preview=os.environ.get("PM_3D_PREVIEW")=="1"
-        lessons=BEATS[:4] if preview else BEATS
+        lessons=BEATS[:1] if preview else BEATS
         for i,beat in enumerate(lessons):
             # Voice is aligned by chapter onset. No section titles or HUD.
             # Equations appear only where their physical referent is visible.

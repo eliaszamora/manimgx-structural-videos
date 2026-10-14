@@ -7,6 +7,7 @@ import sys
 import numpy as np
 sys.path.insert(0,str(Path(__file__).parent))
 from model import S, analyze, points
+from visual_math import display_state
 import manimgx as m
 
 BG="#0B101C"; CONCRETE="#50D7D0"; STEEL="#F9C35D"
@@ -26,7 +27,8 @@ def point3(x,y,z):
 
 def rectangle_section(c):
     """Constant scale mapping of c and Whitney a. One physical section."""
-    r=analyze(c)
+    state=display_state(c)
+    r=state['analysis']
     cx,cy=3.24,.12
     sz=3.14
     half=sz/2
@@ -34,12 +36,12 @@ def rectangle_section(c):
     g.add(m.Rectangle(width=sz,height=sz,stroke_color=CONCRETE,stroke_width=3,
                       fill_color="#21424D",fill_opacity=.22).move_to([cx,cy,0]))
     # a <= h; block lies top, never centered around neutral axis.
-    block_h=sz*r["a"]/S.h
+    block_h=state['blockdepth_2d']
     if block_h>.02:
         g.add(m.Rectangle(width=sz-.03,height=block_h,stroke_width=0,
                            fill_color=COMP,fill_opacity=.26
                           ).move_to([cx,cy+half-block_h/2,0]))
-    nt_y=cy+half-sz*c/S.h
+    nt_y=state['yneutral_2d']
     if nt_y>cy-half and nt_y<cy+half:
         g.add(line([cx-half-.16,nt_y],[cx+half+.16,nt_y],ZERO,2))
     for i,y in enumerate((S.dp,S.dt)):
@@ -54,9 +56,10 @@ def strain_graph(c):
     cx=5.13; y0=1.53; y1=-1.29
     # Fixed epsilon scaling independent of c (unlike previous version).
     per=.28/.003
-    es_bottom=.003*(c-S.h)/c
-    top_x=cx+.003*per
-    bot_x=cx+max(-.006,min(.006,es_bottom))*per
+    state=display_state(c)
+    es_bottom=state['epsilon_bottom']
+    top_x=state['strain_x_top']
+    bot_x=state['strain_x_bottom']
     grp=m.VGroup()
     grp.add(line([cx,y0+.12],[cx,y1-.12],MUTED,1.4))
     grp.add(line([top_x,y0],[bot_x,y1],ZERO,3.6))
@@ -66,9 +69,9 @@ def strain_graph(c):
     return grp
 
 def dot_on_chart(c):
-    rr=analyze(c)
-    xp=-4.55+9.1*rr["Mn"]/350
-    yp=-2.25+4.5*(rr["Pn"]+720)/(4600+720)
+    state=display_state(c)
+    xp=state['chart_x']
+    yp=state['chart_y']
     return m.Dot(point=[xp,yp,0],radius=.11,color=ZERO)
 
 def chart():
@@ -116,14 +119,14 @@ class PorQuePM3D(m.ThreeDScene):
         # The same c drives the equivalent compression block and the section.
         c=m.ValueTracker(290.)
         block=m.always_redraw(lambda:
-             m.Prism(dimensions=[SIDE-.08,max(.025,SIDE*analyze(c.get_value())["a"]/S.h),L-.08],
+             m.Prism(dimensions=[SIDE-.08,max(.025,display_state(c.get_value())['blockdepth_3d']),L-.08],
                   fill_color=COMP,fill_opacity=.22,stroke_color=COMP,stroke_width=.3
-             ).move_to(point3(0,SIDE/2-max(.025,SIDE*analyze(c.get_value())["a"]/S.h)/2,0)))
+             ).move_to(point3(0,display_state(c.get_value())['yblock_3d'],0)))
         neutral=m.always_redraw(lambda:
              m.Prism(dimensions=[SIDE+.13,.015,L+.13],
                       fill_color=ZERO,fill_opacity=.23,stroke_color=ZERO,
                       stroke_width=.8
-                     ).move_to(point3(0,SIDE/2-SIDE*c.get_value()/S.h,0)))
+                     ).move_to(point3(0,display_state(c.get_value())['yneutral_3d'],0)))
         # Load and geometric eccentricity act in the SAME bending plane (y).
         load=m.Arrow3D(point3(0,0,L/2+1.28),point3(0,0,L/2+.1),
                        color=COMP,thickness=.075)

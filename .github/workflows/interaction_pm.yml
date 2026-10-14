@@ -105,7 +105,7 @@ jobs:
               if paths[0] != root/name:shutil.copy2(paths[0],root/name)
           PY
           dur=$(ffprobe -v error -show_entries format=duration -of csv=p=0 build/interaction_pm/narracion.wav)
-          ffmpeg -hide_banner -loglevel error -y -i build/interaction_pm/silent.mp4 -i build/interaction_pm/narracion.wav -filter_complex "[0:v]tpad=stop_mode=clone:stop_duration=25,format=yuv420p[v]" -map "[v]" -map 1:a:0 -c:v libx264 -preset ultrafast -crf 20 -fps_mode:v vfr -c:a aac -b:a 192k -t "$dur" -movflags +faststart build/interaction_pm/interaccion_PM_narrada.mp4
+          ffmpeg -hide_banner -loglevel error -y -i build/interaction_pm/silent.mp4 -i build/interaction_pm/narracion.wav -filter_complex "[0:v]tpad=stop_mode=clone:stop_duration=100,format=yuv420p[v]" -map "[v]" -map 1:a:0 -c:v libx264 -preset ultrafast -crf 23 -fps_mode:v vfr -c:a aac -b:a 192k -t "$dur" -movflags +faststart build/interaction_pm/interaccion_PM_narrada.mp4
       - name: QA audiovisual
         run: |
           python -m pip install -q numpy scipy pillow

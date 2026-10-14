@@ -1,0 +1,53 @@
+name: Vista 3D ManimGX - interacción PM
+on:
+  workflow_dispatch:
+  push:
+    branches: [lesson/interaccion-pm-3d-visual]
+    paths:
+      - "interaction_pm/scene_3d.py"
+      - ".github/workflows/interaction_pm_3d.yml"
+permissions:
+  contents: read
+jobs:
+  three_d_render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install software renderer
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg libvulkan1 mesa-vulkan-drivers libegl1 libgl1 fonts-noto-core
+          python -m pip install -q "manimgx" "numpy"
+      - name: Verify input and mathematical data
+        run: |
+          python -m py_compile interaction_pm/scene_3d.py
+          python -m unittest discover -v -s interaction_pm -p 'test_*.py'
+      - name: Native 3D pilot
+        env:
+          PM_3D_PREVIEW: "1"
+        run: |
+          set -o pipefail
+          mkdir -p build/pm_3d
+          manimgx render interaction_pm/scene_3d.py 2>&1 | tee build/pm_3d/render.log
+          python - <<'PY'
+          from pathlib import Path
+          import shutil
+          out=Path("build/pm_3d/pilot.mp4")
+          files=[p for p in Path(".").rglob("*.mp4") if "build" not in p.parts]
+          if not files:raise SystemExit("ManimGX did not write an MP4")
+          selected=max(files,key=lambda p:p.stat().st_mtime)
+          shutil.copy2(selected,out)
+          print("Saved",out,out.stat().st_size)
+          PY
+          ffprobe -v error -show_entries format=duration:stream=width,height -of default=noprint_wrappers=1 build/pm_3d/pilot.mp4
+          for t in 8 18 34 45; do ffmpeg -hide_banner -loglevel error -y -ss "$t" -i build/pm_3d/pilot.mp4 -frames:v 1 build/pm_3d/frame_$t.jpg; done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: PM-3D-pilot-render
+          path: build/pm_3d/
+          if-no-files-found: warn

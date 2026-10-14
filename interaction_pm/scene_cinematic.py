@@ -73,6 +73,15 @@ def animate_strain(c,origin=(2.05,.12),height=SECTION_W,scale=110.):
     group.add(txt("ε = 0",cx-.50,low-.38,21,SOFT))
     return group
 
+def steel_indicator(c):
+    # Same bottom bar strain as the section; follows linear branch then yield plateau.
+    strain=analyze(c)["steel"][-1]["eps"]
+    ey=S.eps_y
+    pos=max(-1.30,min(1.30,.42*strain/ey))
+    stress=max(-1.,min(1.,strain/ey))
+    return m.Dot(point=[2.03+pos,-.1+1.04*stress,0],
+                 radius=.105,color=COMP if stress>=0 else TENS)
+
 def steel_law():
     g=m.VGroup()
     cx,cy=2.03,-.1; wx=3.3;hy=3.2
@@ -241,11 +250,12 @@ class PeliculaInteraccionPM(m.ThreeDScene):
         sec=m.always_redraw(lambda:animate_section(c.get_value()))
         strain=m.always_redraw(lambda:animate_strain(c.get_value()))
         law=steel_law()
+        steelpoint=m.always_redraw(lambda:steel_indicator(c.get_value()))
         blocknote=txt("a = β1 c",2.0,-2.45,33,AXIS)
         epsnote=txt("εs(y) = 0,003 (c − y) / c",.55,-2.54,30,AXIS)
         force_note=txt("Cc = 0,85 f'c · b · a",.45,-2.55,31,COMP)
         bar_note=txt("− hormigón desplazado por el acero",.55,-2.57,27,SOFT)
-        self.show(sec,strain,law,blocknote,epsnote,force_note,bar_note)
+        self.show(sec,strain,law,steelpoint,blocknote,epsnote,force_note,bar_note)
         
         
         self.play_for(4,[
@@ -262,11 +272,11 @@ class PeliculaInteraccionPM(m.ThreeDScene):
             (6,[c.animate.set_value(185)])])
         self.play_for(7,[
             (8,[m.FadeOut(strain),m.FadeOut(epsnote)]),
-            (12,[m.FadeIn(law)]),
+            (12,[m.FadeIn(law),m.FadeIn(steelpoint)]),
             (16,[c.animate.set_value(155)]),
             (13,[c.animate.set_value(245)])])
         self.play_for(8,[
-            (10,[m.FadeOut(law)]),(8,[m.FadeIn(strain)]),
+            (10,[m.FadeOut(law),m.FadeOut(steelpoint)]),(8,[m.FadeIn(strain)]),
             (10,[m.FadeIn(blocknote)]),
             (13,[c.animate.set_value(185)]),
             (12,[c.animate.set_value(290)])])
@@ -306,7 +316,7 @@ class PeliculaInteraccionPM(m.ThreeDScene):
         phi_curve=curve_object("design");
         c=m.ValueTracker(1800.)
         dot=m.always_redraw(lambda:plot_dot(c.get_value()))
-        
+        design_dot=m.always_redraw(lambda:plot_dot(c.get_value(),phi=True))
         nominal=txt("resistencia nominal",2.90,2.40,23,CONCRETE)
         design=txt("φPn, φMn",3.60,1.94,27,COMP)
         pure=txt("Pn = 0",2.0,-2.54,28,AXIS)
@@ -314,7 +324,7 @@ class PeliculaInteraccionPM(m.ThreeDScene):
         tension=txt("Pt = − Ast fy",2.9,-2.54,28,TENS)
         demandA=m.Dot(point=chart_coord(130,850),radius=.115,color=STEEL)
         demandB=m.Dot(point=chart_coord(320,2100),radius=.115,color=TENS)
-        for ob in (axes,dot,curve,phi_curve,nominal,design,pure,cap,tension,demandA,demandB):
+        for ob in (axes,dot,design_dot,curve,phi_curve,nominal,design,pure,cap,tension,demandA,demandB):
             self.show(ob)
 
         self.play_for(13,[
@@ -341,7 +351,7 @@ class PeliculaInteraccionPM(m.ThreeDScene):
         self.play_for(17,[
             (9,[m.FadeOut(tension)]),
             (15,[m.FadeIn(phi_curve)]),
-            (12,[m.FadeIn(design)]),
+            (12,[m.FadeIn(design),m.FadeOut(dot),m.FadeIn(design_dot)]),
             (14,[c.animate.set_value(195)])])
         self.play_for(18,[
             (8,[m.FadeOut(nominal)]),

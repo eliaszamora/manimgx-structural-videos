@@ -53,7 +53,7 @@ def rectangle_section(c):
 
 def strain_graph(c):
     """ε(y) = 0.003(1 - y/c), x-positive=compression, scales physically."""
-    cx=5.13; y0=1.53; y1=-1.29
+    cx=5.65; y0=1.53; y1=-1.29
     # Fixed epsilon scaling independent of c (unlike previous version).
     per=.28/.003
     state=display_state(c)

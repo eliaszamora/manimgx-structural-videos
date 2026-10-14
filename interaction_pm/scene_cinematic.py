@@ -211,13 +211,14 @@ class PeliculaInteraccionPM(m.ThreeDScene):
         centroid=txt("P",1.8,1.90,29,COMP)
         moment=txt("M = P · e",2.36,-2.32,34,AXIS)
         sec=animate_section(220,center=(1.45,0),w=3.1)
-        self.show(detail,centroid);
+        self.show(detail,centroid)
         self.play_for(0,[
             (5,[m.FadeIn(solid)]),(7,[m.FadeIn(bars)]),
             (5,[m.FadeIn(ties)]),(5,[m.FadeIn(load)]),
             (5,[m.FadeIn(centroid)]),
             (14,[m.FadeIn(detail)]),(5,None)])
         self.show(moment)
+        if os.environ.get("PM_SMOKE")=="1":return
         self.play_for(1,[
             (6,[load.animate.shift(.5*m.UP)]),
             (8,[m.FadeIn(moment)]),
@@ -239,7 +240,7 @@ class PeliculaInteraccionPM(m.ThreeDScene):
         c=m.ValueTracker(290.)
         sec=m.always_redraw(lambda:animate_section(c.get_value()))
         strain=m.always_redraw(lambda:animate_strain(c.get_value()))
-        law=steel_law(); law.set_opacity(0)
+        law=steel_law()
         blocknote=txt("a = β1 c",2.0,-2.45,33,AXIS)
         epsnote=txt("εs(y) = 0,003 (c − y) / c",.55,-2.54,30,AXIS)
         force_note=txt("Cc = 0,85 f'c · b · a",.45,-2.55,31,COMP)

@@ -41,7 +41,7 @@ HALF = SIDE/2
 L = 4.30
 def bar_xy():
     for sign in (1,-1):
-        for xx in (-.65,-.22,.22,.65):
+        for xx in np.linspace(-(HALF-SIDE*S.dp/S.h), HALF-SIDE*S.dp/S.h, 4):
             yield xx, sign*(HALF - SIDE*S.dp/S.h)
 
 def neutral_y(c):
@@ -79,7 +79,7 @@ def section_overlay(c):
         grp.add(stroke([SCX-SX/2-.26,yy,0],[SCX+SX/2+.26,yy,0],GOLD,2.5))
     for y in (S.dp,S.dt):
         color=COMPRESS if r["steel"][0 if y==S.dp else 1]["eps"]>=0 else TENSION
-        for dx in (-.90,-.30,.30,.90):
+        for dx in np.linspace(-SX*(.5-S.dp/S.b), SX*(.5-S.dp/S.b),4):
             grp.add(m.Dot(point=[SCX+dx,SCY+SH/2-SH*y/S.h,0],radius=.079,color=color))
     return grp
 

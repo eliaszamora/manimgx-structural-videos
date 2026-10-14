@@ -387,22 +387,31 @@ class PeliculaInteraccionPM(m.ThreeDScene):
 
     def act_limitations(self,start,end):
         solid,bars,ties,load,base=volume_geometry()
+        # Blue deformed centroidal line is schematic, NOT a calculated buckling mode.
+        bending=m.VMobject(color=TENS,stroke_width=7)
+        B=[]
+        for u in np.linspace(0,1,80):
+            z=(-2.78+5.56*u)*1.25
+            dy=(.95*(3*u*u-2*u*u*u))*1.25
+            B.append(base+np.array([0,dy,z]))
+        bending.set_points_smoothly(B)
+        schematic=txt("deformada esquemática, amplificada",2.52,1.16,21,SOFT)
         delta=txt("P–Δ",2.75,1.75,41,AXIS)
         mx=txt("Mx",2.60,-.30,37,COMP)
         my=txt("My",4.00,-.30,37,TENS)
         caution=txt("La interacción uniaxial no verifica la estabilidad",.15,-2.54,26,SOFT)
-        self.show(delta,mx,my,caution)
+        self.show(delta,mx,my,caution,schematic)
 
         self.play_for(19,[
             (10,[m.FadeIn(solid),m.FadeIn(bars)]),
             (9,[m.FadeIn(load)]),
-            (13,[m.FadeIn(delta)]),
+            (13,[m.FadeIn(delta),m.Create(bending),m.FadeIn(schematic)]),
             (9,[m.FadeIn(mx),m.FadeIn(my)])])
         c=m.ValueTracker(220.)
         sec=m.always_redraw(lambda:animate_section(c.get_value(),center=(2.65,0),w=2.8))
         self.show(sec);
         self.play_for(20,[
-            (8,[m.FadeOut(mx),m.FadeOut(my),m.FadeOut(delta)]),
+            (8,[m.FadeOut(mx),m.FadeOut(my),m.FadeOut(delta),m.FadeOut(bending),m.FadeOut(schematic)]),
             (11,[m.FadeIn(sec)]),
             (16,[c.animate.set_value(150)]),
             (12,[c.animate.set_value(280)]),

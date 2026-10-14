@@ -344,10 +344,10 @@ class PeliculaInteraccionPM(m.ThreeDScene):
         dot=m.always_redraw(lambda:plot_dot(c.get_value()))
         design_dot=m.always_redraw(lambda:plot_dot(c.get_value(),phi=True))
         nominal=txt("resistencia nominal",2.90,2.40,23,CONCRETE)
-        design=txt("φPn, φMn",3.60,1.94,27,COMP)
+        design=txt("φPn, φMn",3.15,1.84,25,COMP)
         pure=txt("Pn = 0",2.0,-2.54,28,AXIS)
-        cap=txt("0,80 φPo",2.0,2.45,26,COMP)
-        tension=txt("Pt = − Ast fy",2.9,-2.54,28,TENS)
+        cap=txt("0,80 φPo",-1.95,2.53,25,COMP)
+        tension=txt("Pt = − Ast fy",-1.55,-2.56,26,TENS)
         demandA=m.Dot(point=chart_coord(130,850),radius=.115,color=STEEL)
         demandB=m.Dot(point=chart_coord(320,2100),radius=.115,color=TENS)
         for ob in (axes,dot,design_dot,curve,phi_curve,nominal,design,pure,cap,tension,demandA,demandB):
